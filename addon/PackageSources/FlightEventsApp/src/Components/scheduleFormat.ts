@@ -75,12 +75,14 @@ export function formatScheduledDate(dateStr: string): string {
  * Accepts:
  *   "8:00 AM" / "8:00am"  -> 8:00
  *   "8:00 PM" / "8:00pm"  -> 20:00
- *   "8:00"    (no AM/PM)  -> 8:00 - defaults to AM for the ambiguous 1-12
- *                            range (this also means a bare "12:00" is
- *                            treated as 12:00 AM/midnight, not noon -
- *                            hosts who mean noon or 8pm should write
- *                            "12:00 PM" / "8:00 PM", or use 24-hour "20:00")
- *   "20:00"   (hour > 12) -> 20:00 - unambiguous 24-hour time
+ *   "12:00 AM"            -> 0:00 (midnight)
+ *   "12:00 PM"            -> 12:00 (noon)
+ *   "8:00"    (no AM/PM)  -> 8:00  - a bare hour/minute with no suffix is
+ *   "12:00"   (no AM/PM)  -> 12:00   read as literal 24-hour time, so "8:00"
+ *   "20:00"   (no AM/PM)  -> 20:00   is 8am and "12:00" is noon - only an
+ *                                    explicit "12:00 AM" means midnight
+ *   "24:00"   (no AM/PM)  -> 0:00  - accepted as the end-of-day equivalent
+ *                                    of midnight
  * Returns null if the text doesn't look like a time at all.
  */
 export function parseHostTime(raw: string): { hour: number; minute: number } | null {
@@ -106,13 +108,10 @@ export function parseHostTime(raw: string): { hour: number; minute: number } | n
       return null;
     }
     hour = hour === 12 ? 12 : hour + 12;
-  } else {
-    if (hour > 23) {
-      return null;
-    }
-    if (hour >= 1 && hour <= 12) {
-      hour = hour === 12 ? 0 : hour;
-    }
+  } else if (hour === 24 && minute === 0) {
+    hour = 0;
+  } else if (hour > 23) {
+    return null;
   }
 
   return { hour, minute };

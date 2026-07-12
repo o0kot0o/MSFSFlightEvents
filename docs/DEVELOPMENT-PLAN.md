@@ -463,8 +463,11 @@ instructions.
 - [x] **Timezone-aware scheduled time (2026-07-12).** The Time field was pure freeform text shown
       identically to every viewer regardless of their own timezone - "8:00 PM" typed by a host in
       one timezone read as ambiguous to a pilot in another. Added `parseHostTime` (accepts
-      "8:00 AM", "8:00 PM", bare "8:00" defaulting to AM, and unambiguous 24-hour "20:00" - hour
-      13-23 needs no suffix since 12-hour time never reaches that range) and
+      "8:00 AM", "8:00 PM", explicit "12:00 AM"/"12:00 PM" for midnight/noon, and any bare
+      hour:minute with no suffix - including "12:00" - read as literal 24-hour time, e.g. "8:00" is
+      8am and "12:00" is noon; "24:00" is additionally accepted as the end-of-day equivalent of
+      midnight. First pass had bare "12:00" defaulting to midnight instead of noon - pilot feedback
+      corrected it to this, which matches normal 24-hour-clock reading more closely) and
       `computeScheduledAtUtc`, which combines the Date+Time fields using `new Date(y,m,d,h,mi)` -
       interpreted in whatever timezone the host's own PC is set to - then serializes to an ISO UTC
       instant. Every viewer's own app converts that same instant back to *their* local time via
