@@ -17,6 +17,7 @@ export interface CreateEventInput {
   flightPlan: FlightPlanPayload;
   scheduledDate?: string;
   scheduledTime?: string;
+  scheduledAtUtc?: string;
 }
 
 export function toSummary(record: EventRecord): EventSummary {
@@ -36,6 +37,7 @@ export function toSummary(record: EventRecord): EventSummary {
     passwordProtected: Boolean(record.password),
     scheduledDate: record.scheduledDate,
     scheduledTime: record.scheduledTime,
+    scheduledAtUtc: record.scheduledAtUtc,
   };
 }
 
@@ -54,6 +56,7 @@ export function createEvent(input: CreateEventInput): EventRecord {
     createdAt: Date.now(),
     scheduledDate: input.scheduledDate,
     scheduledTime: input.scheduledTime,
+    scheduledAtUtc: input.scheduledAtUtc,
   };
   events.set(id, record);
   return record;

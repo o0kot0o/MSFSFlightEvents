@@ -114,10 +114,16 @@
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
 
     > * + * {
       margin-top: 6px;
     }
+  }
+
+  .fe-event-card--expanded {
+    border-color: #4a9eff;
+    background: rgba(74, 158, 255, 0.07);
   }
 
   .fe-event-top-row {
@@ -125,6 +131,27 @@
     align-items: baseline;
     justify-content: space-between;
     width: 100%;
+  }
+
+  .fe-event-top-row-right {
+    display: flex;
+    align-items: baseline;
+    flex-shrink: 0;
+
+    > * + * {
+      margin-left: 8px;
+    }
+  }
+
+  .fe-event-chevron {
+    font-size: 11px;
+    opacity: 0.6;
+  }
+
+  .fe-event-expanded {
+    > * + * {
+      margin-top: 6px;
+    }
   }
 
   .fe-event-name {
@@ -170,7 +197,6 @@
     opacity: 0.75;
     white-space: nowrap;
     flex-shrink: 0;
-    margin-left: 10px;
   }
 
   .fe-event-detail {
@@ -314,6 +340,20 @@
     .fe-accept-title {
       font-size: 14px;
       font-weight: 600;
+    }
+
+    .fe-route-preview {
+      display: block;
+      margin: 0 auto;
+      border-radius: 6px;
+      background: #0c1622;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .fe-route-preview-empty {
+      font-size: 11px;
+      opacity: 0.55;
+      font-style: italic;
     }
 
     .fe-accept-hint {

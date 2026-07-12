@@ -83,6 +83,8 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       flightPlan: body.flightPlan as any,
       scheduledDate: typeof body.scheduledDate === "string" && body.scheduledDate.length > 0 ? body.scheduledDate : undefined,
       scheduledTime: typeof body.scheduledTime === "string" && body.scheduledTime.length > 0 ? body.scheduledTime : undefined,
+      scheduledAtUtc:
+        typeof body.scheduledAtUtc === "string" && body.scheduledAtUtc.length > 0 ? body.scheduledAtUtc : undefined,
     });
     sendJson(res, 201, { id: record.id, hostToken: record.hostToken, event: toSummary(record) });
     return;

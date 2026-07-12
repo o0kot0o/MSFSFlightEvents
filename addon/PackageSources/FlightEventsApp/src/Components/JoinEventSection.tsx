@@ -1,9 +1,13 @@
 import { ArraySubject, DisplayComponent, FSComponent, Subject, Subscribable, VNode } from "@microsoft/msfs-sdk";
 import { DropdownButton, List, TextBox, TTButton } from "@efb/efb-api";
 import { formatRouteIds } from "./flightPlanFormat";
-import { formatScheduledDate } from "./scheduleFormat";
+import { drawRoutePreview } from "./routePreview";
+import { formatScheduledDate, formatScheduledInstant } from "./scheduleFormat";
 import { FlightEventSummary, FlightPlanPayload } from "./types";
 import "./JoinEventSection.scss";
+
+const ROUTE_PREVIEW_WIDTH = 260;
+const ROUTE_PREVIEW_HEIGHT = 130;
 
 const COMPANION_BASE_URL = "http://127.0.0.1:48219";
 
@@ -48,10 +52,25 @@ export class JoinEventSection extends DisplayComponent<JoinEventSectionProps> {
   private readonly pendingPasswordEventId = Subject.create<string | null>(null);
   private readonly passwordInput = Subject.create("");
 
+  /** Which event's card is currently expanded, if any - only one at a time. */
+  private readonly expandedEventId = Subject.create<string | null>(null);
+
   /** The flight plan awaiting Accept/Close after a successful join. */
   private readonly pendingAccept = Subject.create<PendingAccept | null>(null);
   private readonly showAcceptPrompt = this.pendingAccept.map((v) => (v ? "" : "display:none"));
   private readonly acceptTitle = this.pendingAccept.map((v) => v?.flightPlan.title ?? "");
+
+  // The route preview needs real waypoint coordinates, which only exist in
+  // the *full* flight plan a join actually returns - the public event list
+  // (FlightEventSummary.route) is deliberately just bare waypoint id
+  // strings, with no coordinates, so a password-protected event's route
+  // can't be inferred by anyone browsing the list without the password.
+  // That means this can only ever be shown post-join, not on the
+  // expandable event cards.
+  private readonly routeCanvasRef = FSComponent.createRef<HTMLCanvasElement>();
+  private readonly hasRoutePreview = Subject.create(false);
+  private readonly showRoutePreview = this.hasRoutePreview.map((v) => (v ? "" : "display:none"));
+  private readonly showNoRoutePreview = this.hasRoutePreview.map((v) => (v ? "display:none" : ""));
 
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node);
@@ -62,6 +81,14 @@ export class JoinEventSection extends DisplayComponent<JoinEventSectionProps> {
     });
     this.searchText.sub(() => this.applyFilterAndSort());
     this.sortOption.sub(() => this.applyFilterAndSort());
+    this.pendingAccept.sub((pending) => {
+      const canvas = this.routeCanvasRef.getOrDefault();
+      if (!pending || !canvas) {
+        this.hasRoutePreview.set(false);
+        return;
+      }
+      this.hasRoutePreview.set(drawRoutePreview(canvas, pending.flightPlan.waypoints));
+    });
   }
 
   private refresh = async (): Promise<void> => {
@@ -108,6 +135,14 @@ export class JoinEventSection extends DisplayComponent<JoinEventSectionProps> {
     this.visibleEvents.set(sorted);
     this.visibleCount.set(sorted.length);
   }
+
+  private toggleExpanded = (eventId: string): void => {
+    const isCollapsing = this.expandedEventId.get() === eventId;
+    this.expandedEventId.set(isCollapsing ? null : eventId);
+    // Don't leave a stale inline password field open on a card that just
+    // collapsed, or on whichever card was previously expanded.
+    this.pendingPasswordEventId.set(null);
+  };
 
   private onJoinClick = (event: FlightEventSummary): void => {
     if (event.passwordProtected && this.pendingPasswordEventId.get() !== event.id) {
@@ -196,46 +231,79 @@ export class JoinEventSection extends DisplayComponent<JoinEventSectionProps> {
   };
 
   private renderEvent = (event: FlightEventSummary): VNode => {
+    const isExpanded = this.expandedEventId.map((id) => id === event.id);
+    const showExpanded = isExpanded.map((v) => (v ? "" : "display:none"));
+    const chevron = isExpanded.map((v) => (v ? "▴" : "▾"));
+
     const isAwaitingPassword = this.pendingPasswordEventId.map((id) => id === event.id);
     const showActions = isAwaitingPassword.map((v) => (v ? "display:none" : ""));
     const showPasswordRow = isAwaitingPassword.map((v) => (v ? "" : "display:none"));
 
-    const scheduled = [event.scheduledDate ? formatScheduledDate(event.scheduledDate) : undefined, event.scheduledTime]
-      .filter((v) => v && v.length > 0)
-      .join(" · ");
+    // Prefer the timezone-aware instant when available - it's converted to
+    // *this viewer's* own local time/day, not just a copy of what the host
+    // typed. Falls back to the raw text for events posted before this
+    // existed, or where the host's Time text couldn't be parsed.
+    const scheduledFromInstant = event.scheduledAtUtc ? formatScheduledInstant(event.scheduledAtUtc) : null;
+    const scheduled =
+      scheduledFromInstant ??
+      [event.scheduledDate ? formatScheduledDate(event.scheduledDate) : undefined, event.scheduledTime]
+        .filter((v) => v && v.length > 0)
+        .join(" · ");
 
-    return (
-      <div class="fe-event-card">
+    const cardRef = FSComponent.createRef<HTMLDivElement>();
+
+    const vnode = (
+      <div class={{ "fe-event-card": true, "fe-event-card--expanded": isExpanded }} ref={cardRef}>
         <div class="fe-event-top-row">
           <div class="fe-event-name">
             <span>{event.name}</span>
             {event.passwordProtected ? <span class="fe-event-locked">Locked</span> : null}
             {event.isMine ? <span class="fe-event-mine">(yours)</span> : null}
           </div>
-          {scheduled.length > 0 ? <div class="fe-event-time">{scheduled}</div> : null}
+          <div class="fe-event-top-row-right">
+            {scheduled.length > 0 ? <div class="fe-event-time">{scheduled}</div> : null}
+            <span class="fe-event-chevron">{chevron}</span>
+          </div>
         </div>
         <div class="fe-event-detail">Hosted by {event.hostName}</div>
-        {event.description ? <div class="fe-event-description">{event.description}</div> : null}
         <div class="fe-event-route">{formatRouteIds(event.route)}</div>
-        <div class="fe-event-detail">
-          Players: {event.playerCount}
-          {event.maxPlayers ? ` / ${event.maxPlayers}` : ""}
-        </div>
 
-        <div class="fe-password-row" style={showPasswordRow}>
-          <TextBox model={this.passwordInput} placeholder="Event password" />
-          <TTButton key="Submit" type="primary" callback={(): void => this.onJoinClick(event)} />
-          <TTButton key="Cancel" type="secondary" callback={(): void => this.pendingPasswordEventId.set(null)} />
-        </div>
+        <div class="fe-event-expanded" style={showExpanded}>
+          {event.description ? <div class="fe-event-description">{event.description}</div> : null}
+          <div class="fe-event-detail">
+            Players: {event.playerCount}
+            {event.maxPlayers ? ` / ${event.maxPlayers}` : ""}
+          </div>
 
-        <div class="fe-event-actions" style={showActions}>
-          <TTButton key="Join" type="primary" callback={(): void => this.onJoinClick(event)} />
-          {event.isMine ? (
-            <TTButton key="Delete Event" type="secondary" callback={(): void => void this.onDelete(event)} />
-          ) : null}
+          <div class="fe-password-row" style={showPasswordRow}>
+            <TextBox model={this.passwordInput} placeholder="Event password" />
+            <TTButton key="Submit" type="primary" callback={(): void => this.onJoinClick(event)} />
+            <TTButton key="Cancel" type="secondary" callback={(): void => this.pendingPasswordEventId.set(null)} />
+          </div>
+
+          <div class="fe-event-actions" style={showActions}>
+            <TTButton key="Join" type="primary" callback={(): void => this.onJoinClick(event)} />
+            {event.isMine ? (
+              <TTButton key="Delete Event" type="secondary" callback={(): void => void this.onDelete(event)} />
+            ) : null}
+          </div>
         </div>
       </div>
     );
+
+    // Whole card toggles expand/collapse, except the interactive controls
+    // inside the expanded section (Join/Delete/password field) - those
+    // handle their own clicks and would otherwise also bubble up and
+    // immediately re-toggle the card right after, say, joining.
+    cardRef.instance.addEventListener("click", (evt) => {
+      const target = evt.target as HTMLElement | null;
+      if (target?.closest(".fe-event-actions, .fe-password-row")) {
+        return;
+      }
+      this.toggleExpanded(event.id);
+    });
+
+    return vnode;
   };
 
   public render(): VNode {
@@ -276,6 +344,18 @@ export class JoinEventSection extends DisplayComponent<JoinEventSectionProps> {
           <div class="fe-accept-box">
             <div class="fe-accept-heading">Flight plan received</div>
             <div class="fe-accept-title">{this.acceptTitle}</div>
+
+            <canvas
+              class="fe-route-preview"
+              ref={this.routeCanvasRef}
+              width={ROUTE_PREVIEW_WIDTH}
+              height={ROUTE_PREVIEW_HEIGHT}
+              style={this.showRoutePreview}
+            />
+            <div class="fe-route-preview-empty" style={this.showNoRoutePreview}>
+              No coordinate data available to preview this route.
+            </div>
+
             <div class="fe-accept-hint">
               MSFS doesn't allow add-ons to load a flight plan into your EFB automatically yet. Save it to a file,
               then use Import → Load PLN File → Load from PC to select it.

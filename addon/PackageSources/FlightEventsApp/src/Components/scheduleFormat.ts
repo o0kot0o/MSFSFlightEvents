@@ -3,6 +3,31 @@ function isSameCalendarDay(a: Date, b: Date): boolean {
 }
 
 /**
+ * "Today"/"Tomorrow"/"Yesterday" relative to the viewer's own clock, or a
+ * readable date otherwise - compares using the Date object's local (not
+ * UTC) calendar day throughout, so this gives the right answer regardless
+ * of which side of UTC the viewer is on.
+ */
+function formatRelativeDay(date: Date): string {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  if (isSameCalendarDay(date, today)) {
+    return "Today";
+  }
+  if (isSameCalendarDay(date, tomorrow)) {
+    return "Tomorrow";
+  }
+  if (isSameCalendarDay(date, yesterday)) {
+    return "Yesterday";
+  }
+  return date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+}
+
+/**
  * Returns today's date as "YYYY-MM-DD" in local time - used to fill in a
  * blank Date field at event-creation time so "no date entered" reliably
  * means "today" rather than leaving the field empty/unparseable.
@@ -20,7 +45,10 @@ export function todayIsoDate(): string {
  * the viewer's own clock, or a readable date otherwise. Falls back to the
  * raw string unchanged if it isn't a date `Date` can parse - the field is
  * freeform text, not a validated date picker, so this has to degrade
- * gracefully rather than show "Invalid Date".
+ * gracefully rather than show "Invalid Date". Only used as a fallback for
+ * events created before scheduledAtUtc existed, or where the host's Time
+ * text couldn't be parsed into one - see formatScheduledInstant below for
+ * the timezone-aware path.
  */
 export function formatScheduledDate(dateStr: string): string {
   // "new Date('2026-07-10')" parses a bare YYYY-MM-DD string as UTC
@@ -36,22 +64,118 @@ export function formatScheduledDate(dateStr: string): string {
   if (Number.isNaN(parsed.getTime())) {
     return dateStr;
   }
+  return formatRelativeDay(parsed);
+}
 
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
+/**
+ * Parses a host-entered time into 24-hour hour/minute components,
+ * interpreted in the host's own local time (whatever timezone their PC's
+ * clock is set to). Not a strict format - mirrors the freeform Date field.
+ *
+ * Accepts:
+ *   "8:00 AM" / "8:00am"  -> 8:00
+ *   "8:00 PM" / "8:00pm"  -> 20:00
+ *   "8:00"    (no AM/PM)  -> 8:00 - defaults to AM for the ambiguous 1-12
+ *                            range (this also means a bare "12:00" is
+ *                            treated as 12:00 AM/midnight, not noon -
+ *                            hosts who mean noon or 8pm should write
+ *                            "12:00 PM" / "8:00 PM", or use 24-hour "20:00")
+ *   "20:00"   (hour > 12) -> 20:00 - unambiguous 24-hour time
+ * Returns null if the text doesn't look like a time at all.
+ */
+export function parseHostTime(raw: string): { hour: number; minute: number } | null {
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec(raw.trim());
+  if (!match) {
+    return null;
+  }
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const meridiem = match[3]?.toUpperCase();
 
-  if (isSameCalendarDay(parsed, today)) {
-    return "Today";
-  }
-  if (isSameCalendarDay(parsed, tomorrow)) {
-    return "Tomorrow";
-  }
-  if (isSameCalendarDay(parsed, yesterday)) {
-    return "Yesterday";
+  if (minute > 59) {
+    return null;
   }
 
-  return parsed.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+  if (meridiem === "AM") {
+    if (hour < 1 || hour > 12) {
+      return null;
+    }
+    hour = hour === 12 ? 0 : hour;
+  } else if (meridiem === "PM") {
+    if (hour < 1 || hour > 12) {
+      return null;
+    }
+    hour = hour === 12 ? 12 : hour + 12;
+  } else {
+    if (hour > 23) {
+      return null;
+    }
+    if (hour >= 1 && hour <= 12) {
+      hour = hour === 12 ? 0 : hour;
+    }
+  }
+
+  return { hour, minute };
+}
+
+/**
+ * Combines a host-entered Date ("YYYY-MM-DD" or freeform text) and Time
+ * (see parseHostTime) into an absolute instant, returned as an ISO UTC
+ * string. Both are interpreted in whatever timezone the host's own PC is
+ * set to - the `new Date(y, m, d, h, mi)` constructor always builds a Date
+ * from local time components, so this naturally captures "8pm where the
+ * host is," not "8pm UTC." Every viewer's own app then converts that same
+ * instant back to *their* local time for display (see
+ * formatScheduledInstant) - no timezone picker needed on either end.
+ *
+ * Returns undefined if the time couldn't be parsed - a scheduled time is
+ * optional, so "couldn't parse it" degrades to "not scheduled" rather than
+ * blocking the post.
+ */
+export function computeScheduledAtUtc(dateStr: string, timeStr: string): string | undefined {
+  const time = parseHostTime(timeStr);
+  if (!time) {
+    return undefined;
+  }
+
+  const isoMatch = dateStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  let year: number;
+  let month: number;
+  let day: number;
+  if (isoMatch) {
+    year = Number(isoMatch[1]);
+    month = Number(isoMatch[2]) - 1;
+    day = Number(isoMatch[3]);
+  } else {
+    const parsedDate = new Date(dateStr);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return undefined;
+    }
+    year = parsedDate.getFullYear();
+    month = parsedDate.getMonth();
+    day = parsedDate.getDate();
+  }
+
+  const localInstant = new Date(year, month, day, time.hour, time.minute, 0, 0);
+  if (Number.isNaN(localInstant.getTime())) {
+    return undefined;
+  }
+  return localInstant.toISOString();
+}
+
+/**
+ * Formats an absolute instant (see computeScheduledAtUtc) for display,
+ * converting it to the *viewer's* own local time and calendar day - this is
+ * what makes the schedule timezone-aware: the host's "8:00 PM" and a
+ * joining pilot six timezones away both read a correct, correctly-labeled
+ * time for their own clock, computed from the same underlying instant.
+ */
+export function formatScheduledInstant(utcIso: string): string | null {
+  const date = new Date(utcIso);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  const dayLabel = formatRelativeDay(date);
+  const timeLabel = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${dayLabel} · ${timeLabel}`;
 }

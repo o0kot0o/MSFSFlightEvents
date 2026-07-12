@@ -46,6 +46,13 @@ export interface EventRecord {
   scheduledDate?: string;
   /** Freeform text the host typed (e.g. "19:00 Local") - not parsed/validated. */
   scheduledTime?: string;
+  /**
+   * Absolute instant (ISO UTC) computed client-side from scheduledDate/
+   * scheduledTime, using the host's own local timezone at post time. The
+   * server just stores and relays this opaquely - see the addon's
+   * scheduleFormat.ts for how it's computed and displayed.
+   */
+  scheduledAtUtc?: string;
 }
 
 /**
@@ -64,4 +71,5 @@ export interface EventSummary {
   passwordProtected: boolean;
   scheduledDate?: string;
   scheduledTime?: string;
+  scheduledAtUtc?: string;
 }

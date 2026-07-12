@@ -170,6 +170,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         flightPlan: body.flightPlan,
         scheduledDate: body.scheduledDate,
         scheduledTime: body.scheduledTime,
+        scheduledAtUtc: body.scheduledAtUtc,
       });
       if (status === 201 && responseBody.id && responseBody.hostToken) {
         rememberHostedEvent(responseBody.id, responseBody.hostToken);

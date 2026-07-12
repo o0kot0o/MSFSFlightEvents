@@ -1,7 +1,7 @@
 import { DisplayComponent, FSComponent, Subject, VNode } from "@microsoft/msfs-sdk";
 import { Button, TextArea, TextBox, TTButton } from "@efb/efb-api";
 import { formatRouteSummary, summarizeRoute } from "./flightPlanFormat";
-import { todayIsoDate } from "./scheduleFormat";
+import { computeScheduledAtUtc, todayIsoDate } from "./scheduleFormat";
 import { FlightPlanSummary } from "./types";
 import "./CreateEventSection.scss";
 
@@ -136,6 +136,7 @@ export class CreateEventSection extends DisplayComponent<Record<string, never>> 
     }
 
     this.statusMessage.set("Posting event...");
+    const effectiveDate = this.scheduledDate.get() || todayIsoDate();
     try {
       const response = await fetch(`${COMPANION_BASE_URL}/events`, {
         method: "POST",
@@ -147,8 +148,14 @@ export class CreateEventSection extends DisplayComponent<Record<string, never>> 
           // A blank Date field means "today" - store an actual date so Join
           // cards can show a relative "Today"/"Tomorrow"/"Yesterday" label
           // instead of just omitting it.
-          scheduledDate: this.scheduledDate.get() || todayIsoDate(),
+          scheduledDate: effectiveDate,
           scheduledTime: this.scheduledTime.get() || undefined,
+          // Computed from the same Date/Time text, interpreted in this
+          // host's own local timezone - lets every viewer see it converted
+          // to their own local time instead of a copy of this literal text.
+          // Absent (not sent) if the Time field couldn't be parsed - see
+          // parseHostTime's accepted formats.
+          scheduledAtUtc: computeScheduledAtUtc(effectiveDate, this.scheduledTime.get()),
           flightPlan: this.capturedFlightPlan,
         }),
       });
@@ -213,9 +220,9 @@ export class CreateEventSection extends DisplayComponent<Record<string, never>> 
                 </div>
               </div>
               <div class="fe-field">
-                <label class="fe-label">Time (optional)</label>
+                <label class="fe-label">Time (optional, your local time)</label>
                 <div class="fe-input-row">
-                  <TextBox model={this.scheduledTime} placeholder="e.g. 19:00 Local" />
+                  <TextBox model={this.scheduledTime} placeholder="e.g. 8:00 PM or 20:00" />
                 </div>
               </div>
             </div>

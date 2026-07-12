@@ -76,4 +76,15 @@ export interface FlightEventSummary {
   scheduledDate?: string;
   /** Freeform text the host typed (e.g. "19:00 Local") - not parsed/validated. */
   scheduledTime?: string;
+  /**
+   * Absolute instant (ISO UTC), computed from scheduledDate/scheduledTime
+   * using the host's own local timezone at post time (see
+   * scheduleFormat.ts's computeScheduledAtUtc). Preferred over the raw text
+   * fields for display when present - see formatScheduledInstant - since it
+   * lets every viewer see the event time correctly converted to their own
+   * local time instead of a copy of the host's literal text. Absent for
+   * events where the Time field couldn't be parsed, or created before this
+   * field existed.
+   */
+  scheduledAtUtc?: string;
 }

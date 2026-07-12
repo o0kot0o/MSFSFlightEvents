@@ -425,6 +425,58 @@ instructions.
       build-mirror folders, zip each audience's package, then
       `gh release create v0.x.x <zips> --title "..." --notes "..."`.
 
+## Milestone 9 — Join list polish: expand/collapse, route preview, real timezones
+
+- [x] **Expand/collapse event cards (2026-07-12).** Join/Delete were always visible on every card,
+      cluttering the list. Added an `expandedEventId` Subject (only one card open at a time, same
+      pattern as the existing inline-password-field state) - collapsed cards show just name/badges/
+      host/route; expanding reveals description, player count, and the action buttons. Iterated
+      per pilot feedback: first the whole header row was clickable, then the whole card (excluding
+      the actions/password row specifically, via `event.target.closest(...)`, so clicking Join
+      doesn't also immediately re-toggle the card), plus a highlight border on the expanded card.
+      Found along the way: this framework (FSComponent) does *not* support `onclick` as a JSX prop
+      on plain elements the way React does - confirmed by reading `buildComponent`'s actual source,
+      which routes unrecognized props through `element.setAttribute`, not `addEventListener`. Click
+      handlers on plain elements need a `ref` + manual `addEventListener` instead.
+- [x] **Route preview on the post-join screen, not the list (2026-07-12).** Originally planned for
+      inside the expanded card, but building it surfaced a real design constraint: the public
+      Join list (`GET /events`) only ever sends bare waypoint id strings, deliberately no
+      coordinates, so a password-protected event's route can't be inferred by anyone browsing the
+      list without the password. Full waypoint data only exists after a successful join. Moved the
+      preview to the "Flight plan received" screen instead - doesn't leak anything, and is arguably
+      the more useful moment anyway. Draws with the SDK's real `MapProjection`/`GeoPoint` classes
+      (the same Mercator projection math backing G3000/G1000 moving maps) rather than naive lat/lon
+      normalization - geometry only, no basemap imagery (see the `MapBingLayer` research below).
+      Falls back to a plain message for plans with no coordinates at all (SimBrief-style airway
+      routes). Couldn't unit-test this one the way `pln.ts`'s fixes were tested - the real SDK
+      module has runtime dependencies on sim-provided globals (`SimVar`, `RunwayDesignator`, etc.)
+      that don't exist outside MSFS, so it won't load standalone in Node. Needs an in-sim check.
+- [x] **Investigated real in-game map imagery, decided against for now.** The SDK does expose a
+      `MapBingLayer` class ("displays the MSFS Bing Map, weather radar, and 3D terrain") - the
+      actual imagery technology, not a mockup. But it's documented and built around cockpit
+      panel/gauge contexts (registered in an aircraft's `panel.cfg`), the same category of
+      constraint that ruled out the Planned Route API earlier. The real EFB sample template in the
+      SDK doesn't demonstrate any map usage, and the base game's own built-in EFB apps aren't
+      accessible to inspect for precedent (packed, not plain files). Whether it works inside an EFB
+      webview at all is a genuine unknown - not chased further; the vector-only preview above was
+      built as the safe, guaranteed-to-work alternative instead.
+- [x] **Timezone-aware scheduled time (2026-07-12).** The Time field was pure freeform text shown
+      identically to every viewer regardless of their own timezone - "8:00 PM" typed by a host in
+      one timezone read as ambiguous to a pilot in another. Added `parseHostTime` (accepts
+      "8:00 AM", "8:00 PM", bare "8:00" defaulting to AM, and unambiguous 24-hour "20:00" - hour
+      13-23 needs no suffix since 12-hour time never reaches that range) and
+      `computeScheduledAtUtc`, which combines the Date+Time fields using `new Date(y,m,d,h,mi)` -
+      interpreted in whatever timezone the host's own PC is set to - then serializes to an ISO UTC
+      instant. Every viewer's own app converts that same instant back to *their* local time via
+      `formatScheduledInstant` (using their own machine's `Date`/`toLocaleTimeString`) - no
+      timezone picker needed on either end, no manual UTC/Zulu convention required from the host.
+      Verified with a real unit-test round trip (`computeScheduledAtUtc("2026-07-15", "8:00 PM")`
+      on this machine, US Central/UTC-5 in July, correctly produced `2026-07-16T01:00:00.000Z`,
+      and reformatting it reproduced "July 15, 2026 · 8:00 PM"), plus an end-to-end HTTP test
+      directly against the local server confirming `scheduledAtUtc` round-trips through both
+      `POST /events` and `GET /events`. Kept the old raw-text fields as a fallback for events
+      created before this existed or where the Time text couldn't be parsed.
+
 ## Not yet verified end-to-end
 
 - A full join flow with a second real pilot: joining an event, saving the flight plan, and
