@@ -65,6 +65,21 @@ different tools (MSFS-native direct flights, Little Navmap, SimBrief) - each wit
 of how to represent the same schema. Treat any future "single real file" verification of this
 schema as provisional until tested against output from whatever tool a pilot actually used.
 
+**Follow-up, same day: the id fix alone wasn't sufficient - waypoints still didn't load at all.**
+The pilot re-tested v0.1.1 and reported the joining pilot's saved plan showed *no* waypoints in
+MSFS, despite the identifiers now being correct. Comparing the original SimBrief file
+waypoint-by-waypoint against our regenerated output found two more fields silently dropped:
+`<ICAORegion>` (nested inside `<ICAO>`, alongside `<ICAOIdent>`) and `<ATCAirway>`. These
+airway-routed waypoints carry **no coordinates at all** in the source file - MSFS has to resolve
+each bare identifier against its own navdata, and short idents like "ALT" aren't globally unique,
+so the region code is likely what disambiguates it. Losing that on write-out plausibly left MSFS
+unable to resolve any waypoint, producing an empty route despite every id being correct. **Fixed**
+by extending `FlightPlanWaypoint` (all three duplicated type files) with optional `icaoRegion`/
+`airway` fields, parsing them in `pln.ts`, and re-emitting them in `writePln.ts` in the same
+element order as the working original. Verified via the same parse-then-rebuild round trip - not
+yet confirmed in-sim (no way to do that from here), so treat as a strong fix pending pilot
+confirmation. Published as v0.1.2.
+
 **Implication:** the most reliable way to capture "what the pilot is currently flying" is to
 **watch and parse this file**, not to reconstruct it from SimVars. This sidesteps the entire
 "can a panel read the active flight plan" problem — a companion process just needs filesystem

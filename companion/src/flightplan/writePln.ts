@@ -45,9 +45,19 @@ export function buildPlnXml(plan: FlightPlanPayload): string {
       // (confirmed against a real file with "User" type waypoints, which
       // otherwise have no nav-database entry to be looked up by id at all).
       // Mirroring it since it costs nothing and matches known-working output.
-      const icaoXml = `\n            <ICAO>\n                <ICAOIdent>${escapeXml(wp.id)}</ICAOIdent>\n            </ICAO>`;
+      //
+      // ICAORegion matters for real navdata fixes with no coordinates of
+      // their own (airway-routed plans, e.g. SimBrief exports) - MSFS has
+      // to resolve the bare identifier against its own navdata, and short
+      // idents like "ALT" aren't globally unique. Dropping this (and the
+      // airway) on write-out was confirmed to leave MSFS unable to resolve
+      // any waypoint at all - an empty route for the joining pilot despite
+      // every id being correct.
+      const regionXml = wp.icaoRegion ? `\n                <ICAORegion>${escapeXml(wp.icaoRegion)}</ICAORegion>` : "";
+      const icaoXml = `\n            <ICAO>${regionXml}\n                <ICAOIdent>${escapeXml(wp.id)}</ICAOIdent>\n            </ICAO>`;
+      const airwayXml = wp.airway ? `\n            <ATCAirway>${escapeXml(wp.airway)}</ATCAirway>` : "";
       return `        <ATCWaypoint id="${escapeXml(wp.id)}">
-            <ATCWaypointType>${escapeXml(wp.type ?? "Airport")}</ATCWaypointType>${positionXml}${icaoXml}
+            <ATCWaypointType>${escapeXml(wp.type ?? "Airport")}</ATCWaypointType>${airwayXml}${positionXml}${icaoXml}
         </ATCWaypoint>`;
     })
     .join("\n");

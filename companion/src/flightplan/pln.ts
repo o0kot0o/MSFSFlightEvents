@@ -85,11 +85,15 @@ export function parsePlnXml(xml: string, sourcePath: string): FlightPlanSummary 
     // joining pilot's saved file ended up with 15+ duplicate "UNKNOWN"
     // waypoints instead of the real route.
     const icaoIdent = typeof wp.ICAO?.ICAOIdent === "string" ? wp.ICAO.ICAOIdent : undefined;
+    const icaoRegion = typeof wp.ICAO?.ICAORegion === "string" ? wp.ICAO.ICAORegion : undefined;
+    const airway = typeof wp.ATCAirway === "string" ? wp.ATCAirway : undefined;
     return {
       id: wp["@_id"] ?? icaoIdent ?? "UNKNOWN",
       type: wp.ATCWaypointType,
       lat: position?.lat,
       lon: position?.lon,
+      icaoRegion,
+      airway,
     };
   });
 

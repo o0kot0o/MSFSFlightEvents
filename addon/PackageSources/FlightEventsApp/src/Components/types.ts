@@ -9,6 +9,17 @@ export interface FlightPlanWaypoint {
   type?: string;
   lat?: number;
   lon?: number;
+  /**
+   * ICAO region code (e.g. "GM", "LE"). Real navdata fixes with no
+   * coordinates of their own (airway-routed IFR/VFR plans - e.g. SimBrief
+   * exports) rely on MSFS resolving the identifier against its own navdata,
+   * and short idents like "ALT" aren't globally unique - dropping this on
+   * write-out left MSFS unable to resolve any waypoint, producing an empty
+   * route for the joining pilot despite the ids themselves being correct.
+   */
+  icaoRegion?: string;
+  /** Published airway connecting this waypoint to the previous one, if any. */
+  airway?: string;
 }
 
 export interface FlightPlanSummary {
