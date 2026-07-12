@@ -387,9 +387,43 @@ instructions.
       (`server/dist/`, plus a minimal `package.json` added for `npm start` - it has zero runtime
       dependencies, so this isn't strictly required, just convenient). The pilot how-to guide is
       also copied into `distribution/addon/` directly, since it should travel with the addon
-      package specifically if that folder ever gets shared on its own. This is a generated build
-      output, not source - regenerate by rebuilding each project and re-copying rather than
-      hand-editing anything inside it.
+      package specifically if that folder ever gets shared on its own.
+- [x] **How-to guides also built as `.md`, `.html`, and `.pdf` (2026-07-11/12)**, in addition to
+      the original `.txt` - the pilot wanted to compare formats before picking one. HTML/PDF got a
+      real design pass (not a generic template): a "flight-strip/briefing document" aesthetic
+      (numbered procedure steps with a connecting rail - legitimate here since these are real
+      sequential instructions, not decorative numbering; `Bahnschrift`/`Cascadia Code` system
+      fonts, both genuinely Windows-native given this all runs on Windows; NOTAM-style amber
+      callout boxes), a supplied banner image as a hero with a color-matched fade into a bordered
+      content card below, and a top nav between the two docs. Iterated through several rounds of
+      pilot feedback (banner width/fade sizing, a real bug where the Server Host doc's dark-mode
+      accent had been accidentally copy-pasted as blue instead of its own bronze tone, borders
+      missing from the hero/banner sections). Landed on: keep all four formats for now
+      (`.txt`/`.md`/`.html`/`.pdf`) - confirmed keeping `.md` specifically for GitHub's renderer
+      once satisfied with the HTML/PDF design; the others haven't been explicitly pruned. PDFs are
+      generated from the HTML via headless Edge (`--headless --print-to-pdf`) - already installed
+      on Windows, avoiding a Puppeteer/Chromium download.
+- [x] **Pushed to GitHub (2026-07-11/12)**, `github.com/o0kot0o/MSFSFlightEvents`. Caught a real
+      licensing issue before the first push: `addon/PackageSources/vendor/microsoft-msfs-sdk-2.1.1.tgz`
+      is Microsoft's own SDK package, vendored locally because it isn't on the public npm
+      registry - redistributing it on GitHub risks violating Microsoft's SDK terms, which weren't
+      available to check. Excluded via `.gitignore` instead, with a `vendor/README.md` explaining
+      where to source it locally when building.
+- [x] **Stopped committing pre-built distribution artifacts (2026-07-12).** The packaged addon,
+      companion `.exe`, and server dist under `distribution/` are pure build output already
+      mirrored from `addon/`, `companion/`, `server/` - keeping them in git just duplicated
+      artifacts excluded elsewhere and bloated history every rebuild (the companion `.exe` alone
+      is 55MB, and git can't diff binaries). Since the repo was still brand new (pushed once,
+      nobody else had cloned it), rewrote history via an orphan branch + force-push to actually
+      remove the binary from history rather than just stopping future growth - safe to do at this
+      stage, would not be once others depend on the history. Installed GitHub CLI (`winget install
+      GitHub.cli`) and authenticated via the device-code flow to publish a
+      [GitHub Release](https://github.com/o0kot0o/MSFSFlightEvents/releases) instead:
+      `FlightEvents-Pilot-Package.zip` (addon + companion + pilot guide) and
+      `FlightEvents-Server-Package.zip` (server + server-host guide). To publish a new release
+      after changes: rebuild all three projects fresh, re-copy into `distribution/`'s (gitignored)
+      build-mirror folders, zip each audience's package, then
+      `gh release create v0.x.x <zips> --title "..." --notes "..."`.
 
 ## Not yet verified end-to-end
 

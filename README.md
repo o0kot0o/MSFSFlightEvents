@@ -101,12 +101,15 @@ investigated and deliberately not pursued — that file lives outside any Commun
 shared across every auto-launched addon on the system, so wiring into it safely needs a real
 installer, not a Community-folder drop. See `companion/README.md`.
 
-**Distribution folder added.** `/distribution` is a ready-to-hand-out build: the packaged addon
-Community folder, the standalone companion `.exe` + its `Start Flight Events Companion.vbs`
-launcher, and the server's compiled JS (zero runtime dependencies - just needs Node.js), plus two
-plain-text setup guides — one for pilots, one for whoever hosts `/server`. It's a build output, not
-source; regenerate it after any change (see `docs/DEVELOPMENT-PLAN.md`'s Milestone 8 for the exact
-steps used to assemble it).
+**Distribution folder added.** `/distribution` holds the hand-authored setup guides — one for
+pilots, one for whoever hosts `/server` — in four formats (`.txt`/`.md`/`.html`/`.pdf`). The actual
+pre-built artifacts (packaged addon Community folder, standalone companion `.exe`, server's
+compiled JS) aren't committed here — they're build output that just duplicates what's already
+excluded elsewhere and would otherwise bloat repo history on every rebuild (the companion `.exe`
+alone is 55MB). Instead, ready-to-run zips are published as
+[GitHub Releases](https://github.com/o0kot0o/MSFSFlightEvents/releases) — grab the latest
+`FlightEvents-Pilot-Package.zip` or `FlightEvents-Server-Package.zip` there. See
+`docs/DEVELOPMENT-PLAN.md`'s Milestone 8 for how to regenerate and publish a new one.
 
 ## Layout
 
@@ -114,7 +117,8 @@ steps used to assemble it).
 /addon         MSFS 2024 Community package - the EFB app, HTML/JS/CSS via TypeScript+esbuild
 /companion     Desktop companion app - reads flight plan files, holds settings, bridges to /server
 /server        Backend API - one shared instance, hosted by the operator - event discovery + relay
-/distribution  Ready-to-hand-out build: packaged addon + companion exe + server + how-to guides
+/distribution  Setup guides for pilots and server hosts (txt/md/html/pdf) - see GitHub Releases
+               for the actual pre-built addon/companion/server zips
 /docs          Technical findings, architecture decisions, development plan
 ```
 
