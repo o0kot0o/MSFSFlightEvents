@@ -1,0 +1,22 @@
+# OS junk
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Each subproject has its own .gitignore for its own build artifacts
+# (node_modules/, dist/, release/, etc.) - see addon/, companion/, server/.
+#
+# distribution/ is a build output mirrored from those same projects (the
+# packaged addon, the companion .exe, the server's compiled JS) - committing
+# it here just duplicates build artifacts already excluded elsewhere, and
+# the companion .exe alone is 55MB, which bloats repo history further on
+# every rebuild since git can't diff binaries. These get published as
+# GitHub Release assets instead (see the project README for the latest
+# download link). Keep the hand-authored how-to guides and banner image
+# under version control - those aren't build output.
+distribution/addon/
+distribution/companion/
+distribution/server/

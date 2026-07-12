@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flight Events — Pilot Setup Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ink: #1b2436;
+    --ink-soft: #4a5568;
+    --paper: #f0f3f7;
+    --paper-raised: #ffffff;
+    --blue: #1d4e89;
+    --blue-deep: #123258;
+    --amber: #a8650a;
+    --rule: #d3dae3;
+    --step-fill: #1d4e89;
+    --step-ink: #ffffff;
+    --mono-bg: #101823;
+    --mono-fg: #cfe8ff;
+    --mono-accent: #ffc46b;
+    --badge-bg: #e7edf5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e4e9f2;
+      --ink-soft: #a8b4c4;
+      --paper: #0f1620;
+      --paper-raised: #16202c;
+      --blue: #6fa8dc;
+      --blue-deep: #16202c;
+      --amber: #e3a64c;
+      --rule: #2a3542;
+      --step-fill: #2c4a6e;
+      --step-ink: #dceaf9;
+      --mono-bg: #060b12;
+      --mono-fg: #bfe1ff;
+      --mono-accent: #ffc46b;
+      --badge-bg: #1d2a3a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e4e9f2; --ink-soft: #a8b4c4; --paper: #0f1620; --paper-raised: #16202c;
+    --blue: #6fa8dc; --blue-deep: #16202c; --amber: #e3a64c; --rule: #2a3542;
+    --step-fill: #2c4a6e; --step-ink: #dceaf9; --mono-bg: #060b12; --mono-fg: #bfe1ff;
+    --mono-accent: #ffc46b; --badge-bg: #1d2a3a;
+  }
+  :root[data-theme="light"] {
+    --ink: #1b2436; --ink-soft: #4a5568; --paper: #f0f3f7; --paper-raised: #ffffff;
+    --blue: #1d4e89; --blue-deep: #123258; --amber: #a8650a; --rule: #d3dae3;
+    --step-fill: #1d4e89; --step-ink: #ffffff; --mono-bg: #101823; --mono-fg: #cfe8ff;
+    --mono-accent: #ffc46b; --badge-bg: #e7edf5;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .sheet {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 32px 40px 56px;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  nav.docnav {
+    background: var(--paper-raised);
+    border-bottom: 1px solid var(--rule);
+  }
+  nav.docnav .inner {
+    max-width: 712px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+  }
+  nav.docnav a {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink-soft);
+    padding: 14px 4px;
+    border-bottom: 2px solid transparent;
+  }
+  nav.docnav a:hover { color: var(--ink); }
+  nav.docnav a.active {
+    color: var(--role, var(--blue));
+    border-bottom-color: var(--role, var(--blue));
+  }
+
+  .hero {
+    max-width: 850px;
+    margin: 0 auto;
+    position: relative;
+    line-height: 0;
+    border: 1px solid var(--rule);
+    border-bottom: none;
+  }
+  .hero img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100px;
+    background: linear-gradient(to bottom, transparent, var(--blue-deep));
+    pointer-events: none;
+  }
+
+  header.banner {
+    max-width: 850px;
+    margin: 0 auto;
+    background: var(--blue-deep);
+    color: #f4f8fd;
+    padding: 18px 24px;
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+  }
+  header.banner .inner {
+    max-width: 712px;
+    margin: 0 auto;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #eaf1fb;
+    padding: 5px 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .banner p {
+    margin: 0;
+    color: #d3e2f4;
+    font-family: Charter, Georgia, serif;
+    font-size: 15px;
+    max-width: 60ch;
+  }
+
+  h2 {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 8px;
+    margin: 44px 0 20px;
+  }
+  section.intro p { color: var(--ink); }
+  section.intro ul { padding-left: 1.2em; }
+  section.intro li { margin-bottom: 6px; }
+
+  .procedure { list-style: none; margin: 0; padding: 0; }
+  .procedure > li {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 16px;
+    position: relative;
+    padding-bottom: 22px;
+  }
+  .procedure > li:last-child { padding-bottom: 0; }
+  .procedure > li::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: 34px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--rule);
+  }
+  .procedure > li:last-child::before { display: none; }
+  .step-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--step-fill);
+    color: var(--step-ink);
+    font-family: "Bahnschrift", "Segoe UI Semibold", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+  }
+  .step-body p { margin: 2px 0 0; }
+  .step-body p + p { margin-top: 8px; }
+
+  .subprocedure {
+    counter-reset: sub;
+    list-style: none;
+    padding: 0;
+    margin: 18px 0 0;
+  }
+  .subprocedure > li {
+    counter-increment: sub;
+    padding: 10px 0 10px 40px;
+    position: relative;
+    border-top: 1px solid var(--rule);
+  }
+  .subprocedure > li:first-child { border-top: none; }
+  .subprocedure > li::before {
+    content: counter(sub);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--blue);
+    color: var(--blue);
+    font-family: "Bahnschrift", "Segoe UI Semibold", sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  h3.path-title {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    margin: 28px 0 10px;
+  }
+
+  .console {
+    background: var(--mono-bg);
+    color: var(--mono-fg);
+    font-family: "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, monospace;
+    font-size: 14px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 10px 0;
+  }
+  .console .accent { color: var(--mono-accent); }
+  code {
+    font-family: "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, monospace;
+    background: var(--badge-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    font-size: 0.88em;
+  }
+
+  .tray-menu {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 16px;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-top: 16px;
+  }
+  .tray-menu dt {
+    font-family: "Bahnschrift", "Segoe UI Semibold", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--blue);
+  }
+  .tray-menu dd { margin: 0; }
+
+  .callout {
+    border-left: 3px solid var(--amber);
+    background: color-mix(in srgb, var(--amber) 8%, var(--paper-raised));
+    padding: 12px 16px;
+    border-radius: 0 4px 4px 0;
+    margin: 16px 0;
+  }
+  .callout p { margin: 0; }
+  .callout .label {
+    font-family: "Bahnschrift", "Segoe UI Semibold", sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .trouble-list { display: flex; flex-direction: column; gap: 14px; }
+  .trouble-item {
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+  }
+  .trouble-item .q {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .trouble-item .q::before {
+    content: "\2192\00A0";
+    color: var(--amber);
+  }
+  .trouble-item p { margin: 0; color: var(--ink-soft); }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<nav class="docnav">
+  <div class="inner">
+    <a class="active" href="HOW-TO - Pilot Setup.html">Pilot Guide</a>
+    <a href="HOW-TO - Server Host Setup.html">Server Host Guide</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <img src="assets/banner.png" alt="Flight Events — share flight plans, fly together">
+</div>
+
+<header class="banner">
+  <div class="inner">
+    <span class="badge">Pilot Guide</span>
+    <p>Create and join flight-plan events with your group, straight from the MSFS 2024 EFB.</p>
+  </div>
+</header>
+
+<div class="sheet">
+
+  <section class="intro">
+    <p>Flight Events lets a host create a flight event from their current flight plan, and other
+    pilots discover and join it in-sim, receiving the flight plan to load into their own copy of
+    MSFS 2024.</p>
+    <p>You need two things installed:</p>
+    <ul>
+      <li><strong>The Flight Events add-on</strong> — an EFB app inside MSFS</li>
+      <li><strong>The Flight Events Companion app</strong> — a small helper program that runs
+      alongside MSFS</li>
+    </ul>
+    <p>You'll also need a <strong>server address</strong> from whoever is hosting your group's
+    events (ask them for it — it looks like an IP address and a port number, e.g.
+    <code>123.45.67.89:4000</code>).</p>
+  </section>
+
+  <h2>Step 1 — Install the add-on</h2>
+  <ol class="procedure">
+    <li>
+      <span class="step-num">1</span>
+      <div class="step-body">
+        <p>Find your MSFS 2024 Community folder. It's usually at:</p>
+        <div class="console">%APPDATA%\Microsoft Flight Simulator 2024\Packages\Community</div>
+        <p>Copy that line into the Windows File Explorer address bar and press Enter.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">2</span>
+      <div class="step-body">
+        <p>Copy the <code>flight-events-efb-app</code> folder (inside the <code>addon</code>
+        folder you were given) into that Community folder.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">3</span>
+      <div class="step-body">
+        <p>Start (or restart) MSFS 2024.</p>
+      </div>
+    </li>
+  </ol>
+
+  <h2>Step 2 — Install and run the Companion app</h2>
+  <ol class="procedure">
+    <li>
+      <span class="step-num">1</span>
+      <div class="step-body">
+        <p>Copy the <code>companion</code> folder anywhere convenient on your PC — your Desktop
+        or Documents work fine. Keep everything inside that folder together; don't move
+        individual files out of it, or it won't find its icon and helper files.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">2</span>
+      <div class="step-body">
+        <p>Double-click <strong>Start Flight Events Companion.vbs</strong> inside that folder.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">3</span>
+      <div class="step-body">
+        <p>Look in the bottom-right of your screen (the system tray, near the clock) for its
+        icon — that means it's running. You may need to click the small up-arrow ("Show hidden
+        icons") to see it.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">4</span>
+      <div class="step-body">
+        <p>Do this every time before you fly. It closes itself automatically once you close
+        MSFS, so you don't need to remember to stop it.</p>
+      </div>
+    </li>
+  </ol>
+
+  <h3 class="path-title">Tray icon menu (right-click it)</h3>
+  <dl class="tray-menu">
+    <dt>Show Log</dt>
+    <dd>Opens a log file if something isn't working and you need to check what happened.</dd>
+    <dt>Exit</dt>
+    <dd>Stops the Companion app manually.</dd>
+  </dl>
+
+  <h2>Step 3 — Set your name and server address</h2>
+  <ol class="procedure">
+    <li>
+      <span class="step-num">1</span>
+      <div class="step-body"><p>In MSFS, open the EFB (tablet) and find the
+      <strong>Flight Events</strong> app.</p></div>
+    </li>
+    <li>
+      <span class="step-num">2</span>
+      <div class="step-body"><p>Tap the gear icon (top-right) to open Settings.</p></div>
+    </li>
+    <li>
+      <span class="step-num">3</span>
+      <div class="step-body">
+        <p>Enter your <strong>Server Address</strong> (the address your host gave you, e.g.
+        <code>123.45.67.89:4000</code>) and <strong>Your Name</strong> — whatever you want
+        other pilots to see.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">4</span>
+      <div class="step-body"><p>Tap <strong>Save</strong>.</p></div>
+    </li>
+  </ol>
+
+  <h2>Step 4 — Create or join a flight</h2>
+
+  <h3 class="path-title">To host a flight</h3>
+  <ol class="subprocedure">
+    <li>Load or fly your route in MSFS as normal (or have a <code>.pln</code> file ready).</li>
+    <li>In the Flight Events app, tap <strong>Create Flight Event</strong>.</li>
+    <li>Fill in a Title (required) and anything else you want — Description, Password, Date,
+    Time.</li>
+    <li>Under "Flight Plan Source", tap either <strong>Load Current Plan</strong> (grabs
+    whatever's active in MSFS right now) or <strong>Load .PLN File</strong> (browse and pick a
+    saved file).</li>
+    <li>Tap <strong>Post Event</strong>. Other pilots can now find it.</li>
+  </ol>
+
+  <h3 class="path-title">To join a flight</h3>
+  <ol class="subprocedure">
+    <li>In the Flight Events app, tap <strong>Join Flight Event</strong>.</li>
+    <li>Find the event (search or scroll the list) and tap <strong>Join</strong>. Enter the
+    password if it's locked.</li>
+    <li>Tap <strong>Save File</strong> — this saves the host's flight plan to your PC, in your
+    <code>Documents\Flight Events</code> folder.</li>
+    <li>In MSFS's own Flight Planner, tap the Import icon, choose <strong>Load PLN File</strong>,
+    then <strong>Load from PC</strong>, and pick the file you just saved.</li>
+  </ol>
+
+  <h2>Troubleshooting</h2>
+  <div class="trouble-list">
+    <div class="trouble-item">
+      <span class="q">"Could not reach the companion app"</span>
+      <p>The Companion app isn't running. Double-click <strong>Start Flight Events
+      Companion.vbs</strong> again and check for the tray icon.</p>
+    </div>
+    <div class="trouble-item">
+      <span class="q">"Could not read the active flight plan"</span>
+      <p>You haven't actually started a flight yet in MSFS — loading the World Map isn't enough,
+      you need to have spawned in.</p>
+    </div>
+    <div class="trouble-item">
+      <span class="q">The flight plan you loaded looks wrong or out of date</span>
+      <p>MSFS only saves your route to disk when you spawn into the flight. If you changed the
+      route afterward without restarting, "Load Current Plan" may grab the old one. Restart the
+      flight after editing the route, or use "Load .PLN File" with a manually saved file
+      instead.</p>
+    </div>
+    <div class="trouble-item">
+      <span class="q">Can't connect to the server / events aren't showing up</span>
+      <p>Double check the Server Address in Settings matches exactly what your host gave you,
+      and ask your host to confirm the server is running.</p>
+    </div>
+  </div>
+
+  <footer>Flight Events — Pilot Setup Guide</footer>
+
+</div>
+</body>
+</html>

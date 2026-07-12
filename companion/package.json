@@ -1,0 +1,27 @@
+{
+  "name": "flight-events-companion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Desktop companion app for the Flight Events MSFS 2024 add-on. Reads/writes flight plan files and bridges the in-sim EFB app to the network over localhost.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "bundle": "node build.js",
+    "package": "node scripts/package-exe.js"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.0",
+    "node-simconnect": "^4.2.0",
+    "systray2": "^2.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@yao-pkg/pkg": "^6.21.0",
+    "esbuild": "^0.28.1",
+    "resedit-cli": "^3.1.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,220 @@
+.fe-create {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 24px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  height: 100%;
+  // Mitigates stale-repaint-on-scroll ghosting (same symptom class as the
+  // List component's overlap bug below) by forcing this panel onto its own
+  // compositing layer.
+  transform: translateZ(0);
+
+  // The EFB shell's rendering engine (Coherent GT) appears not to support
+  // flexbox `gap` - explicit `gap` values compiled correctly into the CSS
+  // here but visibly had zero effect in-sim (elements rendered touching).
+  // Margin-based spacing works everywhere, so every "gap" in this file is
+  // done this way instead: margin-top on every child but the first.
+  > * + * {
+    margin-top: 20px;
+  }
+
+  .fe-create-columns {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+
+    > * + * {
+      margin-left: 32px;
+    }
+  }
+
+  .fe-create-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+
+    // Generous vertical spacing between fields - the previous, tighter
+    // spacing let adjacent field boxes/text visually run into each other
+    // in-sim.
+    > * + * {
+      margin-top: 24px;
+    }
+  }
+
+  .fe-field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+
+    > * + * {
+      margin-top: 6px;
+    }
+
+    .textarea {
+      width: 100% !important;
+      box-sizing: border-box;
+    }
+  }
+
+  // TextBox's typed value was observed rendering detached from its own
+  // bordered box in-sim (far below where the box was drawn, offset scaling
+  // with how much content followed it on the page) whenever it was a direct
+  // child of a `flex-direction: column` container. It never happened when
+  // TextBox's direct parent used `flex-direction: row` instead (confirmed
+  // working: SettingsSection's fields, the Join panel's search box and
+  // inline password row). So every TextBox here gets wrapped in its own
+  // single-child row container, even though visually it's alone on its row.
+  .fe-input-row {
+    display: flex;
+    flex-direction: row;
+
+    .textbox {
+      position: static !important;
+      width: 100% !important;
+      box-sizing: border-box;
+      flex: 1;
+
+      .disabled-layer {
+        pointer-events: none;
+      }
+    }
+  }
+
+  .fe-field-row {
+    display: flex;
+    flex-direction: row;
+
+    > * + * {
+      margin-left: 12px;
+    }
+
+    > * {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .fe-field-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .fe-label {
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
+  .fe-char-count {
+    font-size: 11px;
+    opacity: 0.5;
+  }
+
+  .fe-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 16px;
+  }
+
+  .fe-source-btn {
+    // The base Button component (as opposed to TTButton, used everywhere
+    // else) renders a plain <button> that doesn't stretch to fill its flex
+    // column on its own - it sizes to content like an unstyled button
+    // unless told otherwise, which is why these were rendering narrower
+    // than the fields above/below them.
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border-radius: 6px;
+
+    .disabled-layer {
+      pointer-events: none;
+    }
+  }
+
+  .fe-source-btn-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+
+    > * + * {
+      margin-top: 2px;
+    }
+  }
+
+  .fe-source-btn-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .fe-source-btn-subtitle {
+    font-size: 11px;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+
+  .fe-selected-plan {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    > * + * {
+      margin-top: 6px;
+    }
+  }
+
+  .fe-selected-plan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    opacity: 0.75;
+
+    > :last-child {
+      width: auto;
+      padding: 4px 10px;
+      font-size: 11px;
+    }
+  }
+
+  .fe-selected-plan-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .fe-selected-plan-hint {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  .fe-post-event {
+    // TTButton doesn't reliably stretch to fill a flex column on its own
+    // (confirmed: it "looked" full width at the old, narrower 420px column
+    // width purely by coincidence of similar sizing - at this panel's wider
+    // 900px max-width it was visibly not stretching at all).
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .fe-status {
+    min-height: 1.4em;
+    font-size: 12px;
+    opacity: 0.8;
+    text-align: center;
+  }
+}

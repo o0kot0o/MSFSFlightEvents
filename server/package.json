@@ -1,0 +1,17 @@
+{
+  "name": "flight-events-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Flight Events backend: event discovery + flight-plan relay. Hosted centrally by whoever runs a Flight Events instance - pilots' companion apps connect to it, not to each other directly.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}

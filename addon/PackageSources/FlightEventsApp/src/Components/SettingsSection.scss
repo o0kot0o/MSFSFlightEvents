@@ -1,0 +1,82 @@
+.fe-settings {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 24px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  height: 100%;
+  // Mitigates stale-repaint-on-scroll ghosting, same as CreateEventSection.scss
+  // / JoinEventSection.scss.
+  transform: translateZ(0);
+
+  // The EFB shell's rendering engine (Coherent GT) appears not to support
+  // flexbox `gap` - explicit `gap` values compiled correctly into the CSS
+  // but visibly had zero effect in-sim. Margin-based spacing works
+  // everywhere, so every "gap" in this file is done this way instead.
+  > * + * {
+    margin-top: 20px;
+  }
+
+  .fe-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .fe-field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+
+    > * + * {
+      margin-top: 6px;
+    }
+  }
+
+  .fe-label {
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
+  // TextBox's typed value was observed rendering detached from its own
+  // bordered box in-sim whenever it was a direct child of a
+  // `flex-direction: column` container - never when its direct parent used
+  // `flex-direction: row` instead. Every TextBox here gets wrapped in its
+  // own single-child row container, even though visually it's alone on its
+  // row - see CreateEventSection.scss for the full writeup.
+  .fe-input-row {
+    display: flex;
+    flex-direction: row;
+
+    .textbox {
+      position: static !important;
+      width: 100% !important;
+      box-sizing: border-box;
+      flex: 1;
+
+      .disabled-layer {
+        pointer-events: none;
+      }
+    }
+  }
+
+  .fe-save-btn {
+    // TTButton doesn't reliably stretch to fill a flex column on its own -
+    // same fix as CreateEventSection.scss's Post Event button.
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .fe-status {
+    min-height: 1.4em;
+    font-size: 12px;
+    opacity: 0.8;
+    text-align: center;
+  }
+}

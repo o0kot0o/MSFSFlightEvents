@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flight Events — Server Host Setup Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ink: #1b2436;
+    --ink-soft: #4a5568;
+    --paper: #f0f3f7;
+    --paper-raised: #ffffff;
+    --role: #7a4a12;
+    --role-deep: #4a2c08;
+    --amber: #a8650a;
+    --rule: #d3dae3;
+    --rule-warm: #c9a876;
+    --step-fill: #7a4a12;
+    --step-ink: #ffffff;
+    --mono-bg: #101823;
+    --mono-fg: #cfe8ff;
+    --mono-accent: #ffc46b;
+    --badge-bg: #efe6d8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e4e9f2;
+      --ink-soft: #a8b4c4;
+      --paper: #0f1620;
+      --paper-raised: #16202c;
+      --role: #c98a3e;
+      --role-deep: #3a2810;
+      --amber: #e3a64c;
+      --rule: #2a3542;
+      --rule-warm: #7a5a30;
+      --step-fill: #6e4a22;
+      --step-ink: #f7e8d4;
+      --mono-bg: #060b12;
+      --mono-fg: #bfe1ff;
+      --mono-accent: #ffc46b;
+      --badge-bg: #241c12;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e4e9f2; --ink-soft: #a8b4c4; --paper: #0f1620; --paper-raised: #16202c;
+    --role: #c98a3e; --role-deep: #3a2810; --amber: #e3a64c; --rule: #2a3542;
+    --rule-warm: #7a5a30;
+    --step-fill: #6e4a22; --step-ink: #f7e8d4; --mono-bg: #060b12; --mono-fg: #bfe1ff;
+    --mono-accent: #ffc46b; --badge-bg: #241c12;
+  }
+  :root[data-theme="light"] {
+    --ink: #1b2436; --ink-soft: #4a5568; --paper: #f0f3f7; --paper-raised: #ffffff;
+    --role: #7a4a12; --role-deep: #4a2c08; --amber: #a8650a; --rule: #d3dae3;
+    --rule-warm: #c9a876;
+    --step-fill: #7a4a12; --step-ink: #ffffff; --mono-bg: #101823; --mono-fg: #cfe8ff;
+    --mono-accent: #ffc46b; --badge-bg: #efe6d8;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .sheet {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 32px 40px 56px;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-warm);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  nav.docnav {
+    background: var(--paper-raised);
+    border-bottom: 1px solid var(--rule);
+  }
+  nav.docnav .inner {
+    max-width: 712px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+  }
+  nav.docnav a {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink-soft);
+    padding: 14px 4px;
+    border-bottom: 2px solid transparent;
+  }
+  nav.docnav a:hover { color: var(--ink); }
+  nav.docnav a.active {
+    color: var(--role, var(--blue));
+    border-bottom-color: var(--role, var(--blue));
+  }
+
+  .hero {
+    max-width: 850px;
+    margin: 0 auto;
+    position: relative;
+    line-height: 0;
+    border: 1px solid var(--rule-warm);
+    border-bottom: none;
+  }
+  .hero img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100px;
+    background: linear-gradient(to bottom, transparent, var(--role-deep));
+    pointer-events: none;
+  }
+
+  header.banner {
+    max-width: 850px;
+    margin: 0 auto;
+    background: var(--role-deep);
+    color: #fbf3e9;
+    padding: 18px 24px;
+    border-left: 1px solid var(--rule-warm);
+    border-right: 1px solid var(--rule-warm);
+  }
+  header.banner .inner {
+    max-width: 712px;
+    margin: 0 auto;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fbf1e2;
+    padding: 5px 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .banner p {
+    margin: 0;
+    color: #f0e2cd;
+    font-family: Charter, Georgia, serif;
+    font-size: 15px;
+    max-width: 60ch;
+  }
+
+  h2 {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--role);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 8px;
+    margin: 44px 0 20px;
+  }
+  section.intro p { color: var(--ink); }
+  section.intro ul { padding-left: 1.2em; }
+  section.intro li { margin-bottom: 6px; }
+
+  .procedure { list-style: none; margin: 0; padding: 0; }
+  .procedure > li {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 16px;
+    position: relative;
+    padding-bottom: 22px;
+  }
+  .procedure > li:last-child { padding-bottom: 0; }
+  .procedure > li::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: 34px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--rule);
+  }
+  .procedure > li:last-child::before { display: none; }
+  .step-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--step-fill);
+    color: var(--step-ink);
+    font-family: "Bahnschrift", "Segoe UI Semibold", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+  }
+  .step-body p { margin: 2px 0 0; }
+  .step-body p + p { margin-top: 8px; }
+
+  h3.path-title {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    margin: 28px 0 10px;
+  }
+
+  .console {
+    background: var(--mono-bg);
+    color: var(--mono-fg);
+    font-family: "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, monospace;
+    font-size: 14px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 10px 0;
+  }
+  .console .accent { color: var(--mono-accent); }
+  code {
+    font-family: "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, monospace;
+    background: var(--badge-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    font-size: 0.88em;
+  }
+
+  .callout {
+    border-left: 3px solid var(--amber);
+    background: color-mix(in srgb, var(--amber) 8%, var(--paper-raised));
+    padding: 12px 16px;
+    border-radius: 0 4px 4px 0;
+    margin: 16px 0;
+  }
+  .callout p { margin: 0; }
+  .callout .label {
+    font-family: "Bahnschrift", "Segoe UI Semibold", sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .trouble-list { display: flex; flex-direction: column; gap: 14px; }
+  .trouble-item {
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+  }
+  .trouble-item .q {
+    font-family: "Bahnschrift", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .trouble-item .q::before {
+    content: "\2192\00A0";
+    color: var(--amber);
+  }
+  .trouble-item p { margin: 0; color: var(--ink-soft); }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<nav class="docnav">
+  <div class="inner">
+    <a href="HOW-TO - Pilot Setup.html">Pilot Guide</a>
+    <a class="active" href="HOW-TO - Server Host Setup.html">Server Host Guide</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <img src="assets/banner.png" alt="Flight Events — share flight plans, fly together">
+</div>
+
+<header class="banner">
+  <div class="inner">
+    <span class="badge">Server Host Guide</span>
+    <p>Run the one shared backend your whole group connects through, so pilots can discover and
+    join each other's events.</p>
+  </div>
+</header>
+
+<div class="sheet">
+
+  <section class="intro">
+    <p>The Flight Events server is the one shared piece of infrastructure your whole group
+    connects through — it's what lets pilots discover and join each other's events. Only
+    <strong>one</strong> person needs to run this (you), not every pilot.</p>
+    <p>You need:</p>
+    <ul>
+      <li>A Windows PC that can stay on and connected to the internet while people are using it</li>
+      <li><strong>Node.js</strong> installed — a free, standard tool for running JavaScript
+      outside a browser. Download it from nodejs.org, choose the "LTS" version, and run the
+      installer with default options.</li>
+    </ul>
+  </section>
+
+  <h2>Step 1 — Copy the server files</h2>
+  <p>Copy the <code>server</code> folder anywhere on your PC, e.g.
+  <code>C:\FlightEventsServer</code>.</p>
+
+  <h2>Step 2 — Run it</h2>
+  <ol class="procedure">
+    <li>
+      <span class="step-num">1</span>
+      <div class="step-body"><p>Open a Command Prompt (search "cmd" in the Start menu).</p></div>
+    </li>
+    <li>
+      <span class="step-num">2</span>
+      <div class="step-body">
+        <p>Type <code>cd </code> (with a trailing space), then drag the <code>server</code>
+        folder into the window, then press Enter. This changes into that folder.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">3</span>
+      <div class="step-body">
+        <p>Type:</p>
+        <div class="console">node index.js</div>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">4</span>
+      <div class="step-body">
+        <p>You should see:</p>
+        <div class="console">Flight Events backend listening on port 4000 (all interfaces)</div>
+        <p>Leave this window open — closing it stops the server. Minimize it instead.</p>
+      </div>
+    </li>
+  </ol>
+
+  <h2>Step 3 — Make it reachable from outside your network</h2>
+  <p>By default this only works for pilots on your own home network. For pilots elsewhere to
+  connect, you need to forward port <code>4000</code> to this PC on your router (search "port
+  forwarding" plus your router's brand/model if you're not sure how). Once that's done, pilots
+  connect using your public IP address (search "what is my IP" to find it) and port 4000, e.g.:</p>
+  <div class="console">123.45.67.89:4000</div>
+  <p>Give that address to your pilots — they'll enter it in the add-on's Settings screen.</p>
+
+  <div class="callout">
+    <span class="label">Important</span>
+    <p>If your internet provider uses "CGNAT" (common on some home/mobile connections), port
+    forwarding won't work at all, because your router doesn't actually have a public IP of its
+    own. If forwarding doesn't seem to work no matter what you try, this is the most likely
+    reason — in that case you'd need to host the server somewhere else instead (a cheap
+    cloud/VPS provider), which is beyond the scope of this guide.</p>
+  </div>
+
+  <h2>Optional — cleaning up old/abandoned events</h2>
+  <p>The server already auto-deletes events older than 24 hours on its own — you usually don't
+  need to do anything. If you ever want to delete a specific event yourself (not just old ones):</p>
+  <ol class="procedure">
+    <li>
+      <span class="step-num">1</span>
+      <div class="step-body"><p>Close the server (Ctrl+C in its window) if it's running.</p></div>
+    </li>
+    <li>
+      <span class="step-num">2</span>
+      <div class="step-body">
+        <p>Set an admin password before starting it. In the same Command Prompt, instead of Step
+        2 above, type:</p>
+        <div class="console">set ADMIN_TOKEN=choose-a-password-here
+node index.js</div>
+        <p>Do this every time you start the server if you want this feature available.</p>
+      </div>
+    </li>
+    <li>
+      <span class="step-num">3</span>
+      <div class="step-body">
+        <p>To delete a specific event, you'll need its ID (visible via
+        <code>http://&lt;your-address&gt;:4000/events</code> in a browser) and a tool that can
+        send a DELETE request with a custom header (e.g. <code>curl</code>, or ask someone
+        technical for help) — this isn't something you can do from a regular web browser
+        alone.</p>
+      </div>
+    </li>
+  </ol>
+
+  <h2>Changing the port</h2>
+  <p>If port 4000 is already used by something else on your PC, set a different one before
+  starting:</p>
+  <div class="console">set PORT=5000
+node index.js</div>
+  <p>Remember to forward whatever port you choose instead, and tell pilots to use that port
+  number.</p>
+
+  <h2>Troubleshooting</h2>
+  <div class="trouble-list">
+    <div class="trouble-item">
+      <span class="q">Pilots get "this site can't provide a secure connection"</span>
+      <p>They (or their browser) are trying <code>https://</code> — this server only speaks
+      plain <code>http://</code>. Make sure the address they use starts with
+      <code>http://</code>, not <code>https://</code>.</p>
+    </div>
+    <div class="trouble-item">
+      <span class="q">Nothing happens when you double-click into the server folder / "node" isn't recognized</span>
+      <p>Node.js isn't installed, or you need to restart your Command Prompt (or PC) after
+      installing it so Windows picks up the change.</p>
+    </div>
+  </div>
+
+  <footer>Flight Events — Server Host Setup Guide</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,338 @@
+.fe-join {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  height: 100%;
+  // Safety net: the List component's shell CSS has repeatedly turned out to
+  // size things wider than the visible viewport (see the .list.scroll-
+  // container override below) - this stops any stray overflow from being
+  // interactable/visible past the panel edge (event time and the password
+  // row's Cancel button were both getting clipped by it).
+  overflow-x: hidden;
+  // Mitigates the same stale-repaint-on-scroll symptom the disabled-layer
+  // overrides below are also guarding against: forces this panel onto its
+  // own compositing layer so scrolling its children doesn't leave ghosted
+  // paint behind.
+  transform: translateZ(0);
+
+  // The EFB shell's rendering engine (Coherent GT) appears not to support
+  // flexbox `gap` - explicit `gap` values compiled correctly into the CSS
+  // but visibly had zero effect in-sim (elements rendered touching). Margin
+  // -based spacing works everywhere, so every "gap" in this file is done
+  // this way instead.
+  > * + * {
+    margin-top: 14px;
+  }
+
+  .fe-toolbar {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+
+    > * {
+      height: 40px;
+      box-sizing: border-box;
+    }
+
+    > * + * {
+      margin-left: 10px;
+    }
+  }
+
+  .fe-search {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+
+    // Same TextBox overlay-hitbox mitigation as CreateEventSection.scss /
+    // SettingsSection.scss, plus an explicit width: the TextBox's own
+    // ".textbox" div doesn't stretch to fill its flex parent on its own -
+    // it renders at its own intrinsic width unless told otherwise, which is
+    // why the search box previously rendered as a small square instead of
+    // filling the available row space.
+    .textbox {
+      position: static !important;
+      width: 100% !important;
+      height: 100% !important;
+      box-sizing: border-box;
+
+      .disabled-layer {
+        pointer-events: none;
+      }
+    }
+  }
+
+  .fe-event-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+
+    > * + * {
+      margin-top: 12px;
+    }
+  }
+
+  // The List component (@efb/efb-api) renders its own "list"/"scroll-container"
+  // classes alongside ours with no CSS of its own - all list styling comes
+  // from the EFB shell's own stylesheet, which we can't see or control. In
+  // landscape/wide layouts it appears to impose some fixed-row-height/grid
+  // behavior that doesn't expect our multi-line cards, causing them to
+  // overlap. ".list.scroll-container" is a two-class shell selector, so we
+  // have to match or beat that specificity (plus !important) to reliably
+  // win regardless of stylesheet load order.
+  .fe-event-list.list.scroll-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+
+    > * {
+      position: static !important;
+      height: auto !important;
+      width: 100% !important;
+      flex: 0 0 auto !important;
+      margin-top: 12px !important;
+
+      &:first-child {
+        margin-top: 0 !important;
+      }
+    }
+  }
+
+  .fe-event-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 16px 18px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+
+    > * + * {
+      margin-top: 6px;
+    }
+  }
+
+  .fe-event-top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .fe-event-name {
+    font-weight: 600;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+
+    > span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    > * + * {
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+  }
+
+  .fe-event-mine {
+    font-weight: 400;
+    font-size: 12px;
+    opacity: 0.65;
+  }
+
+  .fe-event-locked {
+    font-weight: 400;
+    font-size: 11px;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .fe-event-time {
+    font-size: 13px;
+    opacity: 0.75;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 10px;
+  }
+
+  .fe-event-detail {
+    font-size: 14px;
+    opacity: 0.8;
+  }
+
+  .fe-event-description {
+    font-size: 13px;
+    opacity: 0.75;
+    line-height: 1.4;
+    // Long descriptions shouldn't blow up card height indefinitely -
+    // clip after a few lines rather than push everything else down.
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .fe-event-route {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .fe-event-actions {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 4px;
+
+    > * {
+      flex: 1;
+    }
+
+    > * + * {
+      margin-left: 10px;
+    }
+  }
+
+  .fe-password-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+
+    > * + * {
+      margin-left: 8px;
+    }
+
+    // The TextBox fills whatever's left; Submit/Cancel get a fixed share of
+    // the row instead of their own intrinsic width so all three reliably
+    // fit inside the card instead of the last one getting pushed past its
+    // right edge.
+    > :first-child {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    > :nth-child(2),
+    > :nth-child(3) {
+      flex: 0 0 90px;
+    }
+
+    // Same TextBox overlay-hitbox mitigation as CreateEventSection.scss /
+    // SettingsSection.scss.
+    .textbox {
+      position: static !important;
+      width: 100% !important;
+      box-sizing: border-box;
+
+      .disabled-layer {
+        pointer-events: none;
+      }
+    }
+  }
+
+  .fe-status {
+    min-height: 1.4em;
+    font-size: 12px;
+    opacity: 0.8;
+    text-align: center;
+  }
+
+  .fe-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    opacity: 0.6;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .fe-footer-updated {
+    display: flex;
+    align-items: center;
+
+    > * + * {
+      margin-left: 5px;
+    }
+  }
+
+  .fe-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #35d07f;
+    display: inline-block;
+  }
+
+  .fe-accept-prompt {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 24px;
+    box-sizing: border-box;
+    z-index: 10;
+
+    .fe-accept-box {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 320px;
+      padding: 20px;
+      border-radius: 8px;
+      background: #16233a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      text-align: center;
+
+      > * + * {
+        margin-top: 10px;
+      }
+    }
+
+    .fe-accept-heading {
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .fe-accept-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .fe-accept-hint {
+      font-size: 11px;
+      opacity: 0.65;
+      line-height: 1.4;
+    }
+
+    .fe-accept-buttons {
+      display: flex;
+      margin-top: 8px;
+
+      > * {
+        flex: 1;
+      }
+
+      > * + * {
+        margin-left: 8px;
+      }
+    }
+  }
+}
