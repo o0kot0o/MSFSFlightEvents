@@ -35,6 +35,36 @@ a local pattern flight with no en-route legs) — this is a documented part of t
 found on this machine's file, so we have not personally verified waypoint element formatting on this
 machine, but it is extremely well established elsewhere.
 
+**CONFIRMED (disk), real bug found 2026-07-12.** A pilot posted an event using a PLN exported by
+SimBrief, and every waypoint in the flight plan a joining pilot received came through as a
+duplicate "UNKNOWN" instead of its real identifier. Root cause: SimBrief's `<ATCWaypoint>`
+elements carry **no `id` attribute at all** — the identifier lives in a nested
+`<ICAO><ICAOIdent>TOLSI</ICAOIdent></ICAO>` element instead:
+
+```xml
+<ATCWaypoint>
+    <ATCWaypointType>Intersection</ATCWaypointType>
+    <ICAO>
+        <ICAORegion>GM</ICAORegion>
+        <ICAOIdent>TOLSI</ICAOIdent>
+    </ICAO>
+</ATCWaypoint>
+```
+
+`pln.ts`'s parser only ever read the `id="..."` attribute, so every waypoint fell back to its
+"UNKNOWN" default — and since the save-file writer (`writePln.ts`) reuses that same value for both
+its own `id` attribute and `<ICAOIdent>`, the joining pilot's saved `.pln` ended up with 15+
+identical "UNKNOWN" waypoints, which would almost certainly fail to resolve correctly in MSFS.
+**Fixed** by falling back to `<ICAO><ICAOIdent>` when no `id` attribute is present - verified
+against the actual SimBrief file (all 16 waypoints now resolve correctly) and against a full
+parse-then-rebuild round trip. Published as v0.1.1 (companion app only; the backend server was
+unaffected since it never parses `.PLN` files itself).
+
+This is now the **third** distinct real-world `.PLN` waypoint-identification format seen from three
+different tools (MSFS-native direct flights, Little Navmap, SimBrief) - each with a different idea
+of how to represent the same schema. Treat any future "single real file" verification of this
+schema as provisional until tested against output from whatever tool a pilot actually used.
+
 **Implication:** the most reliable way to capture "what the pilot is currently flying" is to
 **watch and parse this file**, not to reconstruct it from SimVars. This sidesteps the entire
 "can a panel read the active flight plan" problem — a companion process just needs filesystem

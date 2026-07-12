@@ -74,8 +74,19 @@ export function parsePlnXml(xml: string, sourcePath: string): FlightPlanSummary 
 
   const waypoints: FlightPlanWaypoint[] = waypointList.map((wp) => {
     const position = parseWorldPosition(wp.WorldPosition);
+    // Real-world PLN files identify a waypoint two different ways: an
+    // `id="..."` XML attribute on <ATCWaypoint> (MSFS-native / Little
+    // Navmap exports), or a nested <ICAO><ICAOIdent> element with no `id`
+    // attribute at all (confirmed against a real SimBrief-exported PLN,
+    // where every <ATCWaypoint> lacked `id` entirely). Only checking the
+    // attribute meant every waypoint silently fell back to "UNKNOWN" for
+    // that format - and since the join/save-file writer reuses this same
+    // id for its own output <ATCWaypoint id="..."> and <ICAOIdent>, a
+    // joining pilot's saved file ended up with 15+ duplicate "UNKNOWN"
+    // waypoints instead of the real route.
+    const icaoIdent = typeof wp.ICAO?.ICAOIdent === "string" ? wp.ICAO.ICAOIdent : undefined;
     return {
-      id: wp["@_id"] ?? "UNKNOWN",
+      id: wp["@_id"] ?? icaoIdent ?? "UNKNOWN",
       type: wp.ATCWaypointType,
       lat: position?.lat,
       lon: position?.lon,
