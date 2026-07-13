@@ -27,6 +27,10 @@ const SECTION_TITLES: Record<Section, string> = {
  */
 const COMPANION_BASE_URL = "http://127.0.0.1:48219";
 const STATUS_POLL_INTERVAL_MS = 8000;
+// Update availability doesn't change within a session, and the companion
+// itself only re-checks GitHub every 30 minutes (see updateCheck.ts) - no
+// reason to ask more often than that.
+const UPDATE_POLL_INTERVAL_MS = 30 * 60_000;
 
 type ConnectionState = "checking" | "ok" | "down" | "unknown";
 
@@ -36,6 +40,8 @@ const STATUS_LABEL: Record<ConnectionState, string> = {
   down: "not connected",
   unknown: "unknown - companion app is not reachable",
 };
+
+type UpdateState = "checking" | "up-to-date" | "available" | "unknown";
 
 // Coherent GT's JS engine doesn't reliably support fetch's abort/timeout
 // machinery - both `AbortSignal.timeout()` and a plain `fetch(url, {
@@ -76,6 +82,10 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
   private readonly companionTitle = this.companionStatus.map((s) => `Companion App: ${STATUS_LABEL[s]}`);
   private readonly serverTitle = this.serverStatus.map((s) => `Server: ${STATUS_LABEL[s]}`);
 
+  private readonly updateStatus = Subject.create<UpdateState>("checking");
+  private readonly updateDotClass = this.updateStatus.map((s) => `fe-status-dot fe-status-dot--${s}`);
+  private readonly updateTitle = Subject.create("Update: checking...");
+
   private goHome = (): void => this.activeSection.set("home");
   private goCreate = (): void => this.activeSection.set("create");
   private goJoin = (): void => this.activeSection.set("join");
@@ -111,10 +121,44 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
     }
   }
 
+  /**
+   * Same "can't reach the internet directly" constraint as the server
+   * status check - GitHub's release info is fetched by the companion (which
+   * also caches it, see updateCheck.ts), not here.
+   */
+  private async pollUpdateStatus(): Promise<void> {
+    if (this.companionStatus.get() !== "ok") {
+      this.updateStatus.set("unknown");
+      this.updateTitle.set("Update: unknown - companion app is not reachable");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${COMPANION_BASE_URL}/update-check`);
+      const data = await response.json();
+      if (!response.ok || !data.latestVersion) {
+        this.updateStatus.set("unknown");
+        this.updateTitle.set("Update: unknown - could not reach GitHub");
+        return;
+      }
+      if (data.updateAvailable) {
+        this.updateStatus.set("available");
+        this.updateTitle.set(`Update available: v${data.latestVersion} (running v${data.currentVersion})`);
+      } else {
+        this.updateStatus.set("up-to-date");
+        this.updateTitle.set(`Up to date (v${data.currentVersion})`);
+      }
+    } catch {
+      this.updateStatus.set("unknown");
+      this.updateTitle.set("Update: unknown - could not reach the companion app");
+    }
+  }
+
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node);
-    void this.pollConnectionStatus();
+    void this.pollConnectionStatus().then(() => this.pollUpdateStatus());
     setInterval(() => void this.pollConnectionStatus(), STATUS_POLL_INTERVAL_MS);
+    setInterval(() => void this.pollUpdateStatus(), UPDATE_POLL_INTERVAL_MS);
   }
 
   public render(): TVNode<HTMLDivElement> {
@@ -137,6 +181,10 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
             <div class="fe-status-badge" title={this.serverTitle}>
               <img class="fe-status-icon" src={`${BASE_URL}/Assets/server.svg`} />
               <span class={this.serverDotClass} />
+            </div>
+            <div class="fe-status-badge" title={this.updateTitle}>
+              <img class="fe-status-icon" src={`${BASE_URL}/Assets/update.svg`} />
+              <span class={this.updateDotClass} />
             </div>
           </div>
 

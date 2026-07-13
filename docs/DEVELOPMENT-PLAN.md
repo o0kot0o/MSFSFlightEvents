@@ -500,6 +500,21 @@ instructions.
       readout, since removed, showed the request was reaching *some* companion process and
       getting an HTTP 404, which was the tell that it was hitting stale packaged code, not a
       client-side bug).
+- [x] **Update-available badge (2026-07-13).** A third header badge (reusing the same
+      icon+dot styling as the Companion/Server badges) shows whether a newer release exists,
+      using a distinct accent-blue dot rather than red/green since "an update exists" isn't a
+      failure state. The EFB app can't reach GitHub directly, so `companion/src/updateCheck.ts`
+      does the check server-side (`GET https://api.github.com/repos/o0kot0o/MSFSFlightEvents/releases/latest`),
+      cached for 30 minutes to stay well under GitHub's unauthenticated rate limit, exposed via a
+      new `GET /update-check` endpoint the same way `/health/backend` proxies server reachability.
+      The companion's own version lives in `companion/src/version.ts` as a plain constant (not
+      read from `package.json` at runtime - the packaged exe can't access that file once bundled)
+      and must be bumped by hand alongside `package.json`'s `"version"` field on every release.
+      First real test caught exactly the kind of bug this feature exists to prevent: the constant
+      had been left at the `0.1.0` placeholder while actual GitHub releases had moved on to
+      `v0.1.4`, so a freshly built companion immediately (and correctly, given its version) flagged
+      itself as needing an update - bumped to `0.1.4` to match reality, confirmed via the endpoint
+      flipping from `updateAvailable: true` to `false`.
 
 ## Not yet verified end-to-end
 

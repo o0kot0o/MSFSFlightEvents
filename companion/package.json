@@ -1,6 +1,6 @@
 {
   "name": "flight-events-companion",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "private": true,
   "description": "Desktop companion app for the Flight Events MSFS 2024 add-on. Reads/writes flight plan files and bridges the in-sim EFB app to the network over localhost.",
   "main": "dist/index.js",

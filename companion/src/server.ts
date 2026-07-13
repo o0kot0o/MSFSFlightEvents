@@ -6,6 +6,7 @@ import { parsePlnFile } from "./flightplan/pln";
 import { writeSharedPlnFile } from "./flightplan/writePln";
 import { forgetHostedEvent, getHostToken, isHostedByMe, rememberHostedEvent } from "./hostedEvents";
 import { getSettings, normalizeBackendUrl, updateSettings } from "./settings";
+import { checkForUpdate } from "./updateCheck";
 
 const DEFAULT_PORT = 48219;
 
@@ -84,6 +85,14 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     } catch {
       sendJson(res, 200, { reachable: false, configured: true });
     }
+    return;
+  }
+
+  // Like /health/backend, this exists because the EFB app can't reach the
+  // internet (GitHub, in this case) directly - the companion checks on its
+  // behalf and caches the result (see updateCheck.ts).
+  if (req.method === "GET" && segments.length === 1 && segments[0] === "update-check") {
+    sendJson(res, 200, await checkForUpdate());
     return;
   }
 

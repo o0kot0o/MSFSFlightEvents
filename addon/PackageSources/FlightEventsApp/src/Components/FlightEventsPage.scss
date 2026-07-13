@@ -52,10 +52,11 @@
       white-space: nowrap;
     }
 
-    // Two small always-visible badges (Companion App, Server) so a host or
-    // pilot can tell at a glance whether the companion process is running
-    // and whether it can currently reach the configured backend, without
-    // having to dig into Settings or wait for an action to fail first.
+    // Small always-visible badges (Companion App, Server, Update) so a host
+    // or pilot can tell at a glance whether the companion process is
+    // running, whether it can currently reach the configured backend, and
+    // whether a newer release exists, without having to dig into Settings
+    // or wait for an action to fail first.
     .fe-status-badges {
       display: flex;
       flex-shrink: 0;
@@ -103,6 +104,17 @@
 
       &--unknown {
         background: #8a8f99;
+      }
+
+      &--up-to-date {
+        background: #3ecf6a;
+      }
+
+      // Deliberately not red/green - "an update exists" isn't a failure
+      // state, but it should still stand out from the other two badges at a
+      // glance, so it gets the app's own accent color instead.
+      &--available {
+        background: #4a9eff;
       }
     }
   }
