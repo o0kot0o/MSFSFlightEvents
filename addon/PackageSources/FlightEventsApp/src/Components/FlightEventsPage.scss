@@ -15,7 +15,14 @@
   .fe-header {
     display: flex;
     align-items: center;
-    gap: 16px;
+    // `gap` has no effect in Coherent GT (see docs/SDK-FINDINGS.md) - it
+    // went unnoticed here while the header only had 2-3 children spaced far
+    // apart by h1's flex:1, but became visible once the status badges landed
+    // right up against the settings gear with zero space between them.
+    // Margin-based spacing on every child but the first works everywhere.
+    > * + * {
+      margin-left: 16px;
+    }
     // Extra top clearance: the EFB shell draws its own status bar (the
     // notification bell + date/time) as an overlay across the top of the
     // app's content instead of pushing it down, so without this the back
@@ -28,6 +35,10 @@
       width: 32px;
       height: 32px;
       flex-shrink: 0;
+    }
+
+    .fe-settings-btn {
+      margin-left: 24px;
     }
 
     h1 {
@@ -88,6 +99,10 @@
 
       &--down {
         background: #e0503c;
+      }
+
+      &--unknown {
+        background: #8a8f99;
       }
     }
   }

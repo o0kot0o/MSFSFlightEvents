@@ -28,13 +28,27 @@ const SECTION_TITLES: Record<Section, string> = {
 const COMPANION_BASE_URL = "http://127.0.0.1:48219";
 const STATUS_POLL_INTERVAL_MS = 8000;
 
-type ConnectionState = "checking" | "ok" | "down";
+type ConnectionState = "checking" | "ok" | "down" | "unknown";
 
 const STATUS_LABEL: Record<ConnectionState, string> = {
   checking: "checking...",
   ok: "connected",
   down: "not connected",
+  unknown: "unknown - companion app is not reachable",
 };
+
+/**
+ * Coherent GT's JS engine is old enough that `AbortSignal.timeout` isn't
+ * available - calling it threw synchronously, which made every fetch below
+ * fail immediately regardless of whether the target was actually reachable
+ * (confirmed in-sim: badges stayed red even after the companion was
+ * started). A manually-built AbortController works the same everywhere.
+ */
+function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
 
 /**
  * Top-level layout: a header (back arrow + title + settings gear), a content
@@ -75,25 +89,26 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
   /**
    * Server reachability can only be checked through the companion (the EFB
    * app never talks to the internet directly, per docs/ARCHITECTURE.md), so
-   * it's only worth asking once the companion itself is confirmed reachable
-   * - otherwise both indicators would just redundantly report the same
-   * "companion is down" failure.
+   * it's only worth asking once the companion itself is confirmed reachable.
+   * If the companion is down, the server's own state is genuinely unknown -
+   * showing it as "down" would falsely claim a server outage when the real
+   * problem is just that the companion isn't running to check.
    */
   private async pollConnectionStatus(): Promise<void> {
     try {
-      const response = await fetch(`${COMPANION_BASE_URL}/health`, { signal: AbortSignal.timeout(3000) });
+      const response = await fetchWithTimeout(`${COMPANION_BASE_URL}/health`, 3000);
       this.companionStatus.set(response.ok ? "ok" : "down");
     } catch {
       this.companionStatus.set("down");
     }
 
     if (this.companionStatus.get() !== "ok") {
-      this.serverStatus.set("down");
+      this.serverStatus.set("unknown");
       return;
     }
 
     try {
-      const response = await fetch(`${COMPANION_BASE_URL}/health/backend`, { signal: AbortSignal.timeout(3000) });
+      const response = await fetchWithTimeout(`${COMPANION_BASE_URL}/health/backend`, 3000);
       const data = await response.json();
       this.serverStatus.set(response.ok && data.reachable ? "ok" : "down");
     } catch {
