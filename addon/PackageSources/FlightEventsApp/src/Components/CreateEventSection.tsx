@@ -200,7 +200,7 @@ export class CreateEventSection extends DisplayComponent<Record<string, never>> 
                 <label class="fe-label">Description</label>
                 <span class="fe-char-count">{this.descriptionCount}</span>
               </div>
-              <TextArea model={this.description} placeholder="Enter description..." rows={3} />
+              <TextArea model={this.description} placeholder="Enter description..." rows={2} />
             </div>
 
             <div class="fe-field">
@@ -209,9 +209,7 @@ export class CreateEventSection extends DisplayComponent<Record<string, never>> 
                 <TextBox model={this.password} placeholder="Enter password..." />
               </div>
             </div>
-          </div>
 
-          <div class="fe-create-col">
             <div class="fe-field-row">
               <div class="fe-field">
                 <label class="fe-label">Date (optional)</label>
@@ -220,13 +218,15 @@ export class CreateEventSection extends DisplayComponent<Record<string, never>> 
                 </div>
               </div>
               <div class="fe-field">
-                <label class="fe-label">Time (optional, your local time)</label>
+                <label class="fe-label">Time (local)</label>
                 <div class="fe-input-row">
                   <TextBox model={this.scheduledTime} placeholder="e.g. 8:00 PM or 20:00" />
                 </div>
               </div>
             </div>
+          </div>
 
+          <div class="fe-create-col">
             <div class="fe-section-label">Flight Plan Source</div>
 
             <Button class="fe-source-btn" callback={(): void => void this.onGetCurrentFlightPlan()}>

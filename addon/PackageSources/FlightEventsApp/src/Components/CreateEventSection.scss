@@ -5,7 +5,7 @@
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding: 16px 24px 24px;
+  padding: 10px 24px 12px;
   box-sizing: border-box;
   overflow-y: auto;
   height: 100%;
@@ -20,30 +20,36 @@
   // Margin-based spacing works everywhere, so every "gap" in this file is
   // done this way instead: margin-top on every child but the first.
   > * + * {
-    margin-top: 20px;
+    margin-top: 10px;
   }
 
+  // Flexbox row here previously left the container sized to its shortest
+  // child instead of its tallest (align-items: flex-start alone shouldn't
+  // cause that per spec - container height should equal the tallest
+  // child's regardless - but that's what happened in-sim: the Post Event
+  // button below rendered overlapping the taller right column's content,
+  // at a height matching the shorter left column instead). CSS Grid makes
+  // row-track height equal to the tallest cell as a basic part of how grid
+  // sizing works, not dependent on stretch/align behavior the way flexbox
+  // is - trying it here as a more fundamentally reliable fix for the same
+  // class of layout-engine quirk already seen with flexbox `gap` above.
   .fe-create-columns {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-
-    > * + * {
-      margin-left: 32px;
-    }
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
   }
 
   .fe-create-col {
-    flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
 
-    // Generous vertical spacing between fields - the previous, tighter
-    // spacing let adjacent field boxes/text visually run into each other
-    // in-sim.
+    &:nth-child(2) {
+      margin-left: 32px;
+    }
+
     > * + * {
-      margin-top: 24px;
+      margin-top: 12px;
     }
   }
 
@@ -53,7 +59,7 @@
     flex-direction: column;
 
     > * + * {
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     .textarea {
@@ -109,6 +115,11 @@
   .fe-label {
     font-size: 12px;
     opacity: 0.75;
+    // A label that wraps to a second line pushes its own field down
+    // relative to a sibling field whose label stayed on one line (seen
+    // with Date/Time side by side) - force a single line instead so any
+    // future label text can't silently misalign the row.
+    white-space: nowrap;
   }
 
   .fe-char-count {
@@ -123,7 +134,7 @@
     text-transform: uppercase;
     opacity: 0.6;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 16px;
+    padding-top: 8px;
   }
 
   .fe-source-btn {
@@ -136,7 +147,7 @@
     align-items: center;
     width: 100% !important;
     box-sizing: border-box;
-    padding: 10px 14px;
+    padding: 7px 14px;
     border-radius: 6px;
 
     .disabled-layer {
@@ -168,13 +179,13 @@
   .fe-selected-plan {
     display: flex;
     flex-direction: column;
-    padding: 12px;
+    padding: 8px 10px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
 
     > * + * {
-      margin-top: 6px;
+      margin-top: 4px;
     }
   }
 
