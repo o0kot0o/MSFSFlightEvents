@@ -282,6 +282,15 @@ mechanism itself. See `ARCHITECTURE.md` for the full reasoning and the fallback 
   all internet traffic through the companion app per the architecture decision below), but it
   resolves the one networking question that mattered for this project's design: the panel can
   reliably talk to a local companion process.
+- **UPDATE — CONFIRMED (live test) 2026-07-13**: `fetch()`'s abort/timeout machinery is not
+  usable from the EFB app. Both `AbortSignal.timeout(ms)` and a manually-built `AbortController`
+  passed as `fetch(url, { signal })` made every request fail immediately in-sim regardless of
+  whether the target was actually reachable - a connection-status feature polling the companion
+  app stayed permanently "unreachable" even with the companion running, until the `signal` option
+  was dropped entirely. No other `fetch` call anywhere in this codebase uses a timeout/signal
+  either, so this is now the established pattern: plain `fetch(url)`, no abort support, for
+  anything running inside the EFB panel (companion-side Node code is unaffected - it already uses
+  `AbortSignal.timeout` successfully for its own outbound check of the backend server).
 - **Practical conclusion:** direct in-sim networking to our own backend over the open internet
   remains untested and still carries the header-bug/no-documented-contract risk described above,
   so the architecture still routes all internet traffic through the companion app rather than

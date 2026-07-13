@@ -480,6 +480,27 @@ instructions.
       `POST /events` and `GET /events`. Kept the old raw-text fields as a fallback for events
       created before this existed or where the Time text couldn't be parsed.
 
+- [x] **Connection status badges (2026-07-13).** Two small icon+dot badges in the persistent
+      header show whether the companion app and the configured backend server are currently
+      reachable, polled every 8s. The EFB app can't reach the backend directly (see
+      `ARCHITECTURE.md`), so a new companion endpoint (`GET /health/backend`) checks that on its
+      behalf. Two real engine quirks found and fixed along the way: `fetch`'s abort/timeout
+      options aren't usable from the EFB panel (see `SDK-FINDINGS.md` §4), and `gap` still
+      doesn't work in Coherent GT, in a header container that had gone unnoticed until enough
+      children needed spacing (fixed with the same margin-based pattern used elsewhere). Also
+      added a third connection state ("unknown", neutral gray) so the server badge doesn't
+      falsely claim an outage when the real problem is just that the companion can't be asked.
+      **Gotcha for future testing:** the companion app has two separate build outputs -
+      `companion/dist/` (plain Node, run via `npm start`) and a packaged standalone
+      `FlightEventsCompanion.exe` under `distribution/companion/` (what the tray-icon shortcut
+      actually launches, built via `npm run package`). A `companion/src` change only reaches the
+      tray-launched exe after re-running `npm run package` and copying `release/` over
+      `distribution/companion/` - `npm run build`/`npm start` alone only affects the first path.
+      This cost significant back-and-forth before being root-caused (a temporary on-screen debug
+      readout, since removed, showed the request was reaching *some* companion process and
+      getting an HTTP 404, which was the tell that it was hitting stale packaged code, not a
+      client-side bug).
+
 ## Not yet verified end-to-end
 
 - A full join flow with a second real pilot: joining an event, saving the flight plan, and
