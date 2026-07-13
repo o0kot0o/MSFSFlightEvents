@@ -37,18 +37,13 @@ const STATUS_LABEL: Record<ConnectionState, string> = {
   unknown: "unknown - companion app is not reachable",
 };
 
-/**
- * Coherent GT's JS engine is old enough that `AbortSignal.timeout` isn't
- * available - calling it threw synchronously, which made every fetch below
- * fail immediately regardless of whether the target was actually reachable
- * (confirmed in-sim: badges stayed red even after the companion was
- * started). A manually-built AbortController works the same everywhere.
- */
-function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
-}
+// Coherent GT's JS engine doesn't reliably support fetch's abort/timeout
+// machinery - both `AbortSignal.timeout()` and a plain `fetch(url, {
+// signal })` with a manually-built AbortController were confirmed in-sim to
+// make every request fail immediately regardless of whether the target was
+// actually reachable (status badges stayed on their initial state forever).
+// No other fetch call in this codebase uses a timeout/signal either -
+// polling below matches that established, working pattern instead.
 
 /**
  * Top-level layout: a header (back arrow + title + settings gear), a content
@@ -96,7 +91,7 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
    */
   private async pollConnectionStatus(): Promise<void> {
     try {
-      const response = await fetchWithTimeout(`${COMPANION_BASE_URL}/health`, 3000);
+      const response = await fetch(`${COMPANION_BASE_URL}/health`);
       this.companionStatus.set(response.ok ? "ok" : "down");
     } catch {
       this.companionStatus.set("down");
@@ -108,7 +103,7 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
     }
 
     try {
-      const response = await fetchWithTimeout(`${COMPANION_BASE_URL}/health/backend`, 3000);
+      const response = await fetch(`${COMPANION_BASE_URL}/health/backend`);
       const data = await response.json();
       this.serverStatus.set(response.ok && data.reachable ? "ok" : "down");
     } catch {
