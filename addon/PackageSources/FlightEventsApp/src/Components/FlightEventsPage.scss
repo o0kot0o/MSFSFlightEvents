@@ -40,6 +40,56 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
+    // Two small always-visible badges (Companion App, Server) so a host or
+    // pilot can tell at a glance whether the companion process is running
+    // and whether it can currently reach the configured backend, without
+    // having to dig into Settings or wait for an action to fail first.
+    .fe-status-badges {
+      display: flex;
+      flex-shrink: 0;
+
+      > * + * {
+        margin-left: 10px;
+      }
+    }
+
+    .fe-status-badge {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+
+    .fe-status-icon {
+      width: 100%;
+      height: 100%;
+    }
+
+    .fe-status-dot {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 2px solid #0b0f16;
+      box-sizing: content-box;
+      background: #8a8f99;
+
+      &--checking {
+        background: #e0b23c;
+      }
+
+      &--ok {
+        background: #3ecf6a;
+      }
+
+      &--down {
+        background: #e0503c;
+      }
+    }
   }
 
   .fe-content {

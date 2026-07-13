@@ -68,6 +68,25 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
+  // The EFB app can't reach the backend server directly (see
+  // docs/ARCHITECTURE.md - all outbound networking goes through this
+  // companion process), so its "Server" status indicator asks the companion
+  // to check reachability on its behalf instead of pinging it itself.
+  if (req.method === "GET" && segments.length === 2 && segments[0] === "health" && segments[1] === "backend") {
+    const { backendUrl } = getSettings();
+    if (!backendUrl) {
+      sendJson(res, 200, { reachable: false, configured: false });
+      return;
+    }
+    try {
+      const response = await fetch(backendUrl, { signal: AbortSignal.timeout(3000) });
+      sendJson(res, 200, { reachable: response.ok, configured: true });
+    } catch {
+      sendJson(res, 200, { reachable: false, configured: true });
+    }
+    return;
+  }
+
   if (req.method === "GET" && segments.length === 1 && segments[0] === "settings") {
     sendJson(res, 200, getSettings());
     return;

@@ -1,5 +1,5 @@
 import { GamepadUiView, IconButton, RequiredProps, TTButton, TVNode, UiViewProps } from "@efb/efb-api";
-import { FSComponent, Subject } from "@microsoft/msfs-sdk";
+import { FSComponent, Subject, VNode } from "@microsoft/msfs-sdk";
 import { CreateEventSection } from "./CreateEventSection";
 import { HomeSection } from "./HomeSection";
 import { JoinEventSection } from "./JoinEventSection";
@@ -17,6 +17,23 @@ const SECTION_TITLES: Record<Section, string> = {
   create: "Create Flight Event",
   join: "Join Flight Event",
   settings: "Settings",
+};
+
+/**
+ * The EFB app only ever talks to the companion process on localhost - it
+ * never reaches the backend server directly (see docs/ARCHITECTURE.md) - so
+ * "Server" reachability has to be asked of the companion rather than checked
+ * here directly.
+ */
+const COMPANION_BASE_URL = "http://127.0.0.1:48219";
+const STATUS_POLL_INTERVAL_MS = 8000;
+
+type ConnectionState = "checking" | "ok" | "down";
+
+const STATUS_LABEL: Record<ConnectionState, string> = {
+  checking: "checking...",
+  ok: "connected",
+  down: "not connected",
 };
 
 /**
@@ -43,10 +60,52 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
   private readonly isCreateSelected = this.activeSection.map((section) => section === "create");
   private readonly isJoinSelected = this.activeSection.map((section) => section === "join");
 
+  private readonly companionStatus = Subject.create<ConnectionState>("checking");
+  private readonly serverStatus = Subject.create<ConnectionState>("checking");
+  private readonly companionDotClass = this.companionStatus.map((s) => `fe-status-dot fe-status-dot--${s}`);
+  private readonly serverDotClass = this.serverStatus.map((s) => `fe-status-dot fe-status-dot--${s}`);
+  private readonly companionTitle = this.companionStatus.map((s) => `Companion App: ${STATUS_LABEL[s]}`);
+  private readonly serverTitle = this.serverStatus.map((s) => `Server: ${STATUS_LABEL[s]}`);
+
   private goHome = (): void => this.activeSection.set("home");
   private goCreate = (): void => this.activeSection.set("create");
   private goJoin = (): void => this.activeSection.set("join");
   private goSettings = (): void => this.activeSection.set("settings");
+
+  /**
+   * Server reachability can only be checked through the companion (the EFB
+   * app never talks to the internet directly, per docs/ARCHITECTURE.md), so
+   * it's only worth asking once the companion itself is confirmed reachable
+   * - otherwise both indicators would just redundantly report the same
+   * "companion is down" failure.
+   */
+  private async pollConnectionStatus(): Promise<void> {
+    try {
+      const response = await fetch(`${COMPANION_BASE_URL}/health`, { signal: AbortSignal.timeout(3000) });
+      this.companionStatus.set(response.ok ? "ok" : "down");
+    } catch {
+      this.companionStatus.set("down");
+    }
+
+    if (this.companionStatus.get() !== "ok") {
+      this.serverStatus.set("down");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${COMPANION_BASE_URL}/health/backend`, { signal: AbortSignal.timeout(3000) });
+      const data = await response.json();
+      this.serverStatus.set(response.ok && data.reachable ? "ok" : "down");
+    } catch {
+      this.serverStatus.set("down");
+    }
+  }
+
+  public onAfterRender(node: VNode): void {
+    super.onAfterRender(node);
+    void this.pollConnectionStatus();
+    setInterval(() => void this.pollConnectionStatus(), STATUS_POLL_INTERVAL_MS);
+  }
 
   public render(): TVNode<HTMLDivElement> {
     return (
@@ -59,6 +118,18 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
             callback={this.goHome}
           />
           <h1>{this.headerTitle}</h1>
+
+          <div class="fe-status-badges">
+            <div class="fe-status-badge" title={this.companionTitle}>
+              <img class="fe-status-icon" src={`${BASE_URL}/Assets/companion.svg`} />
+              <span class={this.companionDotClass} />
+            </div>
+            <div class="fe-status-badge" title={this.serverTitle}>
+              <img class="fe-status-icon" src={`${BASE_URL}/Assets/server.svg`} />
+              <span class={this.serverDotClass} />
+            </div>
+          </div>
+
           <IconButton class="fe-settings-btn" iconPath={`${BASE_URL}/Assets/gear.svg`} callback={this.goSettings} />
         </header>
 
