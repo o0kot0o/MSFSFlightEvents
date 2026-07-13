@@ -75,6 +75,13 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
   private readonly serverDotClass = this.serverStatus.map((s) => `fe-status-dot fe-status-dot--${s}`);
   private readonly companionTitle = this.companionStatus.map((s) => `Companion App: ${STATUS_LABEL[s]}`);
   private readonly serverTitle = this.serverStatus.map((s) => `Server: ${STATUS_LABEL[s]}`);
+  // TEMPORARY: a plain-text readout of the same state the dots show, plus a
+  // poll counter and the last error caught (if any). The dots alone gave no
+  // way to tell whether polling was running at all vs. running but not
+  // visually updating vs. never reaching the companion in the first place -
+  // this makes that observable directly without needing sim devtools.
+  private pollCount = 0;
+  private readonly debugLine = Subject.create("status: not yet polled");
 
   private goHome = (): void => this.activeSection.set("home");
   private goCreate = (): void => this.activeSection.set("create");
@@ -90,15 +97,22 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
    * problem is just that the companion isn't running to check.
    */
   private async pollConnectionStatus(): Promise<void> {
+    this.pollCount += 1;
+    let companionNote = "";
+    let serverNote = "";
+
     try {
       const response = await fetch(`${COMPANION_BASE_URL}/health`);
       this.companionStatus.set(response.ok ? "ok" : "down");
-    } catch {
+      companionNote = `http ${response.status}`;
+    } catch (err) {
       this.companionStatus.set("down");
+      companionNote = `error: ${(err as Error).message || err}`;
     }
 
     if (this.companionStatus.get() !== "ok") {
       this.serverStatus.set("unknown");
+      this.debugLine.set(`#${this.pollCount} companion=${this.companionStatus.get()} (${companionNote})`);
       return;
     }
 
@@ -106,9 +120,16 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
       const response = await fetch(`${COMPANION_BASE_URL}/health/backend`);
       const data = await response.json();
       this.serverStatus.set(response.ok && data.reachable ? "ok" : "down");
-    } catch {
+      serverNote = `http ${response.status} reachable=${data.reachable}`;
+    } catch (err) {
       this.serverStatus.set("down");
+      serverNote = `error: ${(err as Error).message || err}`;
     }
+
+    this.debugLine.set(
+      `#${this.pollCount} companion=${this.companionStatus.get()} (${companionNote}) ` +
+        `server=${this.serverStatus.get()} (${serverNote})`
+    );
   }
 
   public onAfterRender(node: VNode): void {
@@ -142,6 +163,8 @@ export class FlightEventsPage extends GamepadUiView<HTMLDivElement, FlightEvents
 
           <IconButton class="fe-settings-btn" iconPath={`${BASE_URL}/Assets/gear.svg`} callback={this.goSettings} />
         </header>
+
+        <div class="fe-debug-line">{this.debugLine}</div>
 
         <main class="fe-content">
           <div class="fe-section" style={this.isHomeVisible}>

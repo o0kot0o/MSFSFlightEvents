@@ -107,6 +107,17 @@
     }
   }
 
+  // TEMPORARY diagnostic readout - see the comment on debugLine in
+  // FlightEventsPage.tsx. Remove once status-badge polling is confirmed
+  // working in-sim.
+  .fe-debug-line {
+    flex-shrink: 0;
+    padding: 0 16px 6px;
+    font-size: 10px;
+    opacity: 0.6;
+    word-break: break-all;
+  }
+
   .fe-content {
     flex: 1;
     min-height: 0;
